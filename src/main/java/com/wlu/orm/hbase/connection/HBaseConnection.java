@@ -3,21 +3,31 @@ package com.wlu.orm.hbase.connection;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.*;
 
 import java.io.IOException;
 
 public class HBaseConnection {
 
-    private HConnection connection;
-    private HBaseAdmin admin;
+    private Connection connection;
+    private Admin admin;
 
     public HBaseConnection() throws IOException {
         Configuration cfg = HBaseConfiguration.create();
-        connection = HConnectionManager.createConnection(cfg);
-        admin = new HBaseAdmin(cfg);
+        connection = ConnectionFactory.createConnection(cfg);
+        admin = connection.getAdmin();
     }
 
+    public HBaseConnection(Connection connection) throws IOException {
+    	this.connection = connection;
+        admin = connection.getAdmin();
+    }
+    
+    public Connection getConnection(){
+    	return connection;
+    }
+    
     /**
      * insert put to the table with name <code>tablename</code>
      *
@@ -26,7 +36,7 @@ public class HBaseConnection {
      * @throws IOException
      */
     public void insert(byte[] tablename, Put put) throws IOException {
-        HTableInterface htable = connection.getTable(tablename);
+        Table htable = connection.getTable(TableName.valueOf(tablename));
         try {
             htable.put(put);
         } finally {
@@ -40,9 +50,8 @@ public class HBaseConnection {
      * @param tablename
      * @throws IOException
      */
-    public void delete(byte[] tablename,
-                       org.apache.hadoop.hbase.client.Delete delete) throws IOException {
-        HTableInterface htable = connection.getTable(tablename);
+    public void delete(byte[] tablename, Delete delete) throws IOException {
+        Table htable =  connection.getTable(TableName.valueOf(tablename));
         try {
             htable.delete(delete);
         } finally {
@@ -51,7 +60,7 @@ public class HBaseConnection {
     }
 
     public Result query(byte[] tablename, Get get) throws IOException {
-        HTableInterface table = connection.getTable(tablename);
+        Table table =  connection.getTable(TableName.valueOf(tablename));
         Result result = null;
         try {
             result = table.get(get);
@@ -64,12 +73,12 @@ public class HBaseConnection {
     }
 
     public boolean tableExists(final String tableName) throws IOException {
-        return admin.tableExists(tableName);
+        return admin.tableExists(TableName.valueOf(tableName));
     }
 
     public void deleteTable(final String tableName) throws IOException {
-        admin.disableTable(tableName);
-        admin.deleteTable(tableName);
+        admin.disableTable(TableName.valueOf(tableName));
+        admin.deleteTable(TableName.valueOf(tableName));
     }
 
     public void createTable(HTableDescriptor td) throws IOException {
