@@ -2,6 +2,7 @@ package com.wlu.orm.hbase.schema;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -240,6 +241,22 @@ public class DataMapperFacory<T> {
 			}
 			fieldDataType.put(field,
 					new FieldDataType(FieldDataType.MAP, field.getType()));
+		} else if (field.getType().equals(Date.class)) {
+			if (databaseField.familyName().length() == 0) {
+				throw new HBaseOrmException(
+						"For primitive typed field "
+								+ dataClass.getName()
+								+ "."
+								+ field.getName()
+								+ " we must define family with annotation: familyName=\"familyname\".");
+			} else {
+				family = getDatabaseColumnName(databaseField.familyName(),
+						field);
+				qualifier = getDatabaseColumnName(
+						databaseField.qualifierName(), field);
+				fieldDataType.put(field, new FieldDataType(
+						FieldDataType.PRIMITIVE, field.getType()));
+			}
 		}
 		// others
 		else {

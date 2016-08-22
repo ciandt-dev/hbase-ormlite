@@ -1,11 +1,9 @@
 package com.wlu.orm.hbase.schema.value;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Date;
 
 import org.apache.hadoop.hbase.util.Bytes;
-
-import com.wlu.orm.hbase.util.util;
 
 //import test.testFields;
 
@@ -15,6 +13,7 @@ public class ValueFactory {
 	static Class<Double> DOUBLE = Double.class;
 	static Class<Float> FLOAT = Float.class;
 	static Class<String> STRING = String.class;
+	static Class<java.util.Date> DATE = Date.class;
 
 	public static <T> Value Create(T instance) {
 
@@ -31,6 +30,8 @@ public class ValueFactory {
 			return new FloatValue((Float) instance);
 		} else if (instanceClass.equals(STRING)) {
 			return new StringValue((String) instance);
+		} else if (instanceClass.equals(DATE)) {
+			return new DateValue((Date)instance);
 		} else {
 			return new StringValue((String) instance.toString());
 		}
@@ -59,6 +60,8 @@ public class ValueFactory {
 			return new Float(Bytes.toFloat(bytes));
 		} else if (clazz.equals(STRING)) {
 			return new String(Bytes.toString(bytes));
+		} else if (clazz.equals(DATE)) {
+			return new Date(Bytes.toInt(bytes));
 		} else {
 			return null;
 		}
