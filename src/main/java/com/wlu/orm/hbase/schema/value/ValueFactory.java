@@ -13,7 +13,8 @@ public class ValueFactory {
 	static Class<Double> DOUBLE = Double.class;
 	static Class<Float> FLOAT = Float.class;
 	static Class<String> STRING = String.class;
-	static Class<java.util.Date> DATE = Date.class;
+	static Class<Date> DATE = Date.class;
+	static Class<Boolean> BOOLEAN = Boolean.class;
 
 	public static <T> Value Create(T instance) {
 
@@ -32,6 +33,8 @@ public class ValueFactory {
 			return new StringValue((String) instance);
 		} else if (instanceClass.equals(DATE)) {
 			return new DateValue((Date)instance);
+		} else if (instanceClass.equals(BOOLEAN)) {
+			return new BooleanValue((Boolean)instance);
 		} else {
 			return new StringValue((String) instance.toString());
 		}
@@ -46,12 +49,15 @@ public class ValueFactory {
 	 * @return
 	 */
 	public static Object CreateObject(Class<?> clazz, byte[] bytes) {
+		System.out.println(">>>>>>>> "+clazz);
 		if (clazz.equals(int.class)) {
 			return new Integer(Bytes.toInt(bytes));
 		} else if (clazz.equals(double.class)) {
 			return new Double(Bytes.toDouble(bytes));
 		} else if (clazz.equals(float.class)) {
 			return new Float(Bytes.toFloat(bytes));
+		} else if (clazz.equals(boolean.class)) {
+			return new Boolean(Bytes.toBoolean(bytes));
 		} else if (clazz.equals(INTEGER)) {
 			return new Integer(Bytes.toInt(bytes));
 		} else if (clazz.equals(DOUBLE)) {

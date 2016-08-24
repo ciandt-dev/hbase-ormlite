@@ -78,8 +78,10 @@ public class DataMapper<T> {
         Constructor<?> constr = clazz.getDeclaredConstructor();
         Object instance = constr.newInstance();
         for (Field field : clazz.getDeclaredFields()) {
+        	LOG.info(field.getName());
             if (field.equals(rowkeyField)) {
                 byte[] value = result.getRow();
+                System.out.println("<<<<<<<< "+ value);
                 Object fieldinstance = ValueFactory.CreateObject(
                         field.getType(), value);
                 util.SetToField(instance, field, fieldinstance);
@@ -150,12 +152,14 @@ public class DataMapper<T> {
             } else if (subdatatype.isPrimitive()) {
                 byte[] value = map
                         .get(subfieldToQualifier.get(fieldstringname));
-
-                Class<?> subfieldClazz = subdatatype.dataclass;
-                // convert from byte[] to Object according to field clazz
-                Object subfieldinstance = ValueFactory.CreateObject(
-                        subfieldClazz, value);
-                util.SetToField(fieldinstance, subField, subfieldinstance);
+                if(value.length > 0){
+                	Class<?> subfieldClazz = subdatatype.dataclass;
+                	// convert from byte[] to Object according to field clazz
+                	Object subfieldinstance = ValueFactory.CreateObject(
+                			subfieldClazz, value);
+                	System.out.println(subField.getName());
+                	util.SetToField(fieldinstance, subField, subfieldinstance);
+                }
             } else if (subdatatype.isList()) {
                 NavigableMap<byte[], byte[]> qvmap = map;
                 List<String> lst = new ArrayList<String>();
