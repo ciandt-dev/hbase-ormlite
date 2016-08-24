@@ -3,7 +3,7 @@ package com.wlu.orm.hbase.dao;
 import com.wlu.orm.hbase.connection.HBaseConnection;
 import com.wlu.orm.hbase.exceptions.HBaseOrmException;
 import com.wlu.orm.hbase.schema.DataMapper;
-import com.wlu.orm.hbase.schema.DataMapperFacory;
+import com.wlu.orm.hbase.schema.DataMapperFactory;
 import com.wlu.orm.hbase.schema.value.Value;
 import com.wlu.orm.hbase.schema.value.ValueFactory;
 import com.wlu.orm.hbase.util.util;
@@ -22,13 +22,13 @@ public class DaoImpl<T> implements Dao<T> {
     Class<T> dataClass;
     private HBaseConnection hbaseConnection;
     // set constant schemas
-    private DataMapperFacory<T> dataMapperFactory = null;
+    private DataMapperFactory<T> dataMapperFactory = null;
 
     public DaoImpl(Class<T> dataClass, HBaseConnection connection)
             throws HBaseOrmException {
         this.dataClass = dataClass;
         hbaseConnection = connection;
-        dataMapperFactory = new DataMapperFacory<T>(dataClass);
+        dataMapperFactory = new DataMapperFactory<T>(dataClass);
     }
 
     @Override
@@ -36,7 +36,10 @@ public class DaoImpl<T> implements Dao<T> {
         if (hbaseConnection.tableExists(dataMapperFactory.tablename)) {
             hbaseConnection.deleteTable(dataMapperFactory.tablename);
         }
-        hbaseConnection.createTable(dataMapperFactory.TableCreateDescriptor());
+        if (hbaseConnection.tableExists(dataMapperFactory.getIndexTable().getNameAsString())) {
+            hbaseConnection.deleteTable(dataMapperFactory.getIndexTable().getNameAsString());
+        }
+        hbaseConnection.createTables(dataMapperFactory.TableCreateDescriptors());
         LOG.info(dataMapperFactory.TableCreateScript());
     }
 
@@ -46,7 +49,7 @@ public class DaoImpl<T> implements Dao<T> {
             LOG.info("The table has already existed, will not recreate it.");
             return;
         }
-        hbaseConnection.createTable(dataMapperFactory.TableCreateDescriptor());
+        hbaseConnection.createTables(dataMapperFactory.TableCreateDescriptors());
         LOG.info(dataMapperFactory.TableCreateScript());
     }
 
