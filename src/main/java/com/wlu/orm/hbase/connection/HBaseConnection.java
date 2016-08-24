@@ -7,6 +7,7 @@ import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.*;
 
 import java.io.IOException;
+import java.util.List;
 
 public class HBaseConnection {
 
@@ -85,4 +86,9 @@ public class HBaseConnection {
         admin.createTable(td);
     }
 
+    public void createTables(List<HTableDescriptor> tds) throws IOException {
+        for (HTableDescriptor td : tds) {
+            this.createTable(td);
+        }
+    }
 }
