@@ -1,5 +1,14 @@
 package com.wlu.orm.hbase.dao;
 
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.hbase.util.Bytes;
+
 import com.wlu.orm.hbase.connection.HBaseConnection;
 import com.wlu.orm.hbase.exceptions.HBaseOrmException;
 import com.wlu.orm.hbase.schema.DataMapper;
@@ -7,14 +16,6 @@ import com.wlu.orm.hbase.schema.DataMapperFactory;
 import com.wlu.orm.hbase.schema.value.Value;
 import com.wlu.orm.hbase.schema.value.ValueFactory;
 import com.wlu.orm.hbase.util.util;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.hbase.util.Bytes;
-
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.util.List;
-import java.util.Map;
 
 public class DaoImpl<T> implements Dao<T> {
 
@@ -82,6 +83,7 @@ public class DaoImpl<T> implements Dao<T> {
         }
     }
 
+    
     @Override
     public void deleteById(T data) throws HBaseOrmException {
         Value rowkey = null;

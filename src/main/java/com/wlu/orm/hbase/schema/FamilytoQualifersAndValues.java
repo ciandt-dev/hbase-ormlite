@@ -3,8 +3,12 @@ package com.wlu.orm.hbase.schema;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.util.Bytes;
 
+import com.wlu.orm.hbase.schema.value.StringValue;
 import com.wlu.orm.hbase.schema.value.Value;
 
 /**
@@ -14,6 +18,8 @@ import com.wlu.orm.hbase.schema.value.Value;
  * 
  */
 public class FamilytoQualifersAndValues {
+	private static Log LOG = LogFactory.getLog(FamilytoQualifersAndValues.class);
+	
 	private byte[] family;
 	private Map<byte[], Value> qualifierValue = new HashMap<byte[], Value>();
 
@@ -27,20 +33,20 @@ public class FamilytoQualifersAndValues {
 	}
 
 	// add family:qualifier->value to a Put
-	public Put AddToPut(Put put) {
+	public Put addToPut(Put put) {
 		if (put == null) {
 			return null;
 		}
 		for (byte[] qualifier : qualifierValue.keySet()) {
 			try{
-			put.add(family, qualifier, qualifierValue.get(qualifier).toBytes());
-			}catch (Exception e){
-				e.printStackTrace();
+				put.addColumn(family, qualifier, qualifierValue.get(qualifier).toBytes());
+			} catch (Exception e){
+				LOG.error("Error trying to addToPut info to Put Object", e);
 			}
 		}
 		return put;
 	}
-
+	
 	public byte[] getFamily() {
 		return family;
 	}

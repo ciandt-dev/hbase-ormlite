@@ -16,7 +16,7 @@ public @interface DatabaseField {
 	String familyName() default "";
 
 	String qualifierName() default "";
-
+	
 	boolean isQualiferList() default false;
 	
 	boolean isQualifierValueMap() default false;

@@ -3,6 +3,7 @@ package com.wlu.orm.hbase.schema;
 import com.wlu.orm.hbase.annotation.DatabaseField;
 import com.wlu.orm.hbase.connection.HBaseConnection;
 import com.wlu.orm.hbase.exceptions.HBaseOrmException;
+import com.wlu.orm.hbase.schema.value.StringValue;
 import com.wlu.orm.hbase.schema.value.Value;
 import com.wlu.orm.hbase.schema.value.ValueFactory;
 import com.wlu.orm.hbase.util.util;
@@ -20,7 +21,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 public class DataMapper<T> {
-    Log LOG = LogFactory.getLog(DataMapper.class);
+    private static final String StringValue = null;
+	private static Log LOG = LogFactory.getLog(DataMapper.class);
     // fixed schema for the generic type T, copy from the factory
     public String tablename;
     public Map<Field, FamilyQualifierSchema> fixedSchema;
@@ -50,13 +52,44 @@ public class DataMapper<T> {
     // insert the instance to HBase
     public void insert(HBaseConnection connection) throws IOException {
         Put put = new Put(rowkey.toBytes());
+        List<Put> putList = new ArrayList<Put>();
+        Map<String, Object> tableMap = new HashMap<String, Object>();
         // add each field's data to the 'put'
         for (Field field : datafieldsToFamilyQualifierValue.keySet()) {
-            datafieldsToFamilyQualifierValue.get(field).AddToPut(put);
+        	FamilytoQualifersAndValues familytoQualifersAndValues = datafieldsToFamilyQualifierValue.get(field);
+			familytoQualifersAndValues.addToPut(put);
+        	DatabaseField databaseField = field.getAnnotation(DatabaseField.class);
+        	if(databaseField.isIndexed()){
+        		Put p = getPutToIndexTable(field, rowkey.toBytes(), familytoQualifersAndValues.getQualiferValue());
+        		putList.add(p);
+        	}
         }
-        connection.insert(Bytes.toBytes(tablename), put);
+        ///TODO evaluate the index table name
+        tableMap.put(tablename, put);
+        tableMap.put(tablename + DataMapperFactory.INDEX_TABLE_SUFFIX, putList);
+        connection.insert(tableMap, put);
     }
 
+	public Put getPutToIndexTable(Field field, byte[] value, Map<byte[], Value> qualifierValue) {
+		Put p = null;
+		try{
+			for (byte[] qualifier : qualifierValue.keySet()) {
+				byte[] rowKey = generateRowKey(field, qualifierValue.get(qualifier)); 
+				byte[] indexTableFamilyQualifier = DataMapperFactory.INDEX_ROW_KEY.getBytes();
+				p = new Put(rowKey);
+				p.addColumn(indexTableFamilyQualifier, indexTableFamilyQualifier, value);
+			}
+		}catch (Exception e){
+			LOG.error("Error trying to create PUT object to Index Table", e);
+		}
+		return p;
+	}
+
+	private byte[] generateRowKey(Field field, Value value) {
+		Object obj = ValueFactory.getValue(value);
+		return (field.getName()+":"+obj.toString()).getBytes();
+	}
+	
     public T queryById(Value id, HBaseConnection connection) throws HBaseOrmException {
         byte[] rowkey = id.toBytes();
         Get get = new Get(rowkey);
@@ -81,7 +114,6 @@ public class DataMapper<T> {
         	LOG.info(field.getName());
             if (field.equals(rowkeyField)) {
                 byte[] value = result.getRow();
-                System.out.println("<<<<<<<< "+ value);
                 Object fieldinstance = ValueFactory.CreateObject(
                         field.getType(), value);
                 util.SetToField(instance, field, fieldinstance);

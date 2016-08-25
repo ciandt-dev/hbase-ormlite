@@ -49,7 +49,6 @@ public class ValueFactory {
 	 * @return
 	 */
 	public static Object CreateObject(Class<?> clazz, byte[] bytes) {
-		System.out.println(">>>>>>>> "+clazz);
 		if (clazz.equals(int.class)) {
 			return new Integer(Bytes.toInt(bytes));
 		} else if (clazz.equals(double.class)) {
@@ -72,7 +71,25 @@ public class ValueFactory {
 			return null;
 		}
 	}
-
+	public static Object getValue(Value value) {
+		Class<? extends Value> clazz = value.getClass();
+		if (clazz.equals(IntValue.class)) {
+			return ((IntValue)value).getIntValue();
+		} else if (clazz.equals(DoubleValue.class)) {
+			return ((DoubleValue)value).getDoubleValue();
+		} else if (clazz.equals(FloatValue.class)) {
+			return ((FloatValue)value).getFloatValue();
+		} else if (clazz.equals(BooleanValue.class)) {
+			return ((BooleanValue)value).getBooleanValue();
+		} else if (clazz.equals(StringValue.class)) {
+			return ((StringValue)value).getStringValue();
+		} else if (clazz.equals(DateValue.class)) {
+			return ((DateValue)value).getDateValue();
+		} else {
+			return null;
+		}
+	}
+	
 	/*
 	 * used when directly create a Value
 	 */

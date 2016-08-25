@@ -33,7 +33,8 @@ public class DataMapperFactory<T> {
 	public Field rowkeyField;
 	public Class<?> dataClass;
 
-	public static final String INDEX_TABLE_SUFFIX = "Index";
+	protected static final String INDEX_TABLE_SUFFIX = "Index";
+	protected static final String INDEX_ROW_KEY = "key";
 
 	private boolean isTableIndexed = false;
 
@@ -137,7 +138,7 @@ public class DataMapperFactory<T> {
 
 	public HTableDescriptor IndexTableCreateDescriptor() {
 		HTableDescriptor td = new HTableDescriptor(getIndexTable());
-		td.addFamily(new HColumnDescriptor("k"));
+		td.addFamily(new HColumnDescriptor(INDEX_ROW_KEY));
 		return td;
 	}
 

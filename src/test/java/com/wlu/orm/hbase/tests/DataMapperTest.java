@@ -10,7 +10,7 @@ import java.util.Map;
 import com.wlu.orm.hbase.connection.HBaseConnection;
 import com.wlu.orm.hbase.exceptions.HBaseOrmException;
 import com.wlu.orm.hbase.schema.DataMapper;
-import com.wlu.orm.hbase.schema.DataMapperFacory;
+import com.wlu.orm.hbase.schema.DataMapperFactory;
 
 
 public class DataMapperTest {
@@ -23,7 +23,7 @@ public class DataMapperTest {
 
     public void testDataMapper() throws IOException {
 		try {
-			DataMapperFacory<User> UserMapperFactory = new DataMapperFacory<User>(
+			DataMapperFactory<User> UserMapperFactory = new DataMapperFactory<User>(
 					User.class);
 
 			Profile p = new Profile("jacky", "14", "Hangzhou, Wen 2 road, #391");
@@ -42,7 +42,7 @@ public class DataMapperTest {
 			User user = new User("1234", p, lp, 8080);
 
 			DataMapper<User> dm1 = UserMapperFactory.Create(user);
-			DataMapperFacory<Post> PostMapperFactory = new DataMapperFacory<Post>(
+			DataMapperFactory<Post> PostMapperFactory = new DataMapperFactory<Post>(
 					Post.class);
 			System.out.println(UserMapperFactory.TableCreateScript());
 			DataMapper<Post> postmapper = PostMapperFactory.Create(new Post());

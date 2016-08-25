@@ -1,15 +1,25 @@
 package com.wlu.orm.hbase.connection;
 
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.*;
+import org.apache.hadoop.hbase.client.Admin;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
+import org.apache.hadoop.hbase.client.Delete;
+import org.apache.hadoop.hbase.client.Get;
+import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.client.Table;
 
-import java.io.IOException;
-import java.util.List;
 
-public class HBaseConnection {
+public class HBaseConnection implements Closeable{
 
     private Connection connection;
     private Admin admin;
@@ -45,7 +55,27 @@ public class HBaseConnection {
         }
     }
 
-    /**
+    public void insert(Map<String, Object> tableMap, Put put) throws IOException {
+    	for (String table : tableMap.keySet()) {
+    			insert(table.getBytes(), tableMap.get(table));
+			
+		}
+    }
+
+    @SuppressWarnings("unchecked")
+    private void insert(byte[] bytes, Object object) throws IOException {
+    	if(object instanceof List){
+			List<Put> list = (List<Put>)object;
+    		for (Put put : list) {
+				insert(bytes, put);
+			}
+    	} else if (object instanceof Put){
+    		insert(bytes, (Put)object);
+    	}
+		
+	}
+
+	/**
      * Delete the whole row of table with name <code>tablename</code>
      *
      * @param tablename
@@ -91,4 +121,14 @@ public class HBaseConnection {
             this.createTable(td);
         }
     }
+
+	@Override
+	public void close() throws IOException {
+		if(connection != null){
+			connection.close();
+		}
+		if(admin != null){
+			admin.close();
+		}
+	}
 }

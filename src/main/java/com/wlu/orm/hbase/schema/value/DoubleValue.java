@@ -13,13 +13,13 @@ public class DoubleValue implements Value {
 
 	
 
-	public double getIntValue() {
+	public double getDoubleValue() {
 		return doubleValue;
 	}
 
 
 
-	public void setIntValue(double intValue) {
+	public void setDoubleValue(double intValue) {
 		this.doubleValue = intValue;
 	}
 
