@@ -18,11 +18,13 @@ import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Table;
 
+import com.wlu.orm.hbase.schema.IndexTable;
+
 
 public class HBaseConnection implements Closeable{
 
-    private Connection connection;
-    private Admin admin;
+    protected Connection connection;
+    protected Admin admin;
 
     public HBaseConnection() throws IOException {
         Configuration cfg = HBaseConfiguration.create();
@@ -55,26 +57,23 @@ public class HBaseConnection implements Closeable{
         }
     }
 
-    public void insert(Map<String, Object> tableMap, Put put) throws IOException {
-    	for (String table : tableMap.keySet()) {
-    			insert(table.getBytes(), tableMap.get(table));
-			
-		}
-    }
-
-    @SuppressWarnings("unchecked")
-    private void insert(byte[] bytes, Object object) throws IOException {
-    	if(object instanceof List){
-			List<Put> list = (List<Put>)object;
-    		for (Put put : list) {
-				insert(bytes, put);
-			}
-    	} else if (object instanceof Put){
-    		insert(bytes, (Put)object);
-    	}
-		
+    private void insert(byte[] tablename, List<Put> list) throws IOException {
+        Table htable = connection.getTable(TableName.valueOf(tablename));
+        try {
+            htable.put(list);
+        } finally {
+            htable.close();
+        }
 	}
-
+    
+	public void insert(String tablename, Put put, IndexTable indexTable) throws IOException {
+		insert(tablename.getBytes(),put);
+		if(indexTable != null){
+			String tableNameIndex = indexTable.getTableNameIndex();
+			insert(tableNameIndex.getBytes(), indexTable.getPutList());
+		}
+	}
+	
 	/**
      * Delete the whole row of table with name <code>tablename</code>
      *
@@ -131,4 +130,6 @@ public class HBaseConnection implements Closeable{
 			admin.close();
 		}
 	}
+
+
 }

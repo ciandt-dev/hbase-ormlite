@@ -1,12 +1,15 @@
 package com.wlu.orm.hbase.schema;
 
-import com.wlu.orm.hbase.annotation.DatabaseField;
-import com.wlu.orm.hbase.connection.HBaseConnection;
-import com.wlu.orm.hbase.exceptions.HBaseOrmException;
-import com.wlu.orm.hbase.schema.value.StringValue;
-import com.wlu.orm.hbase.schema.value.Value;
-import com.wlu.orm.hbase.schema.value.ValueFactory;
-import com.wlu.orm.hbase.util.util;
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.client.Get;
@@ -14,14 +17,14 @@ import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
 
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import com.wlu.orm.hbase.annotation.DatabaseField;
+import com.wlu.orm.hbase.connection.HBaseConnection;
+import com.wlu.orm.hbase.exceptions.HBaseOrmException;
+import com.wlu.orm.hbase.schema.value.Value;
+import com.wlu.orm.hbase.schema.value.ValueFactory;
+import com.wlu.orm.hbase.util.util;
 
 public class DataMapper<T> {
-    private static final String StringValue = null;
 	private static Log LOG = LogFactory.getLog(DataMapper.class);
     // fixed schema for the generic type T, copy from the factory
     public String tablename;
@@ -34,7 +37,7 @@ public class DataMapper<T> {
     private Map<Field, FamilytoQualifersAndValues> datafieldsToFamilyQualifierValue;
     // private data for rowkey
     private Value rowkey;
-
+    
     /**
      * Construct with fixed members as parameters
      */
@@ -52,44 +55,20 @@ public class DataMapper<T> {
     // insert the instance to HBase
     public void insert(HBaseConnection connection) throws IOException {
         Put put = new Put(rowkey.toBytes());
-        List<Put> putList = new ArrayList<Put>();
-        Map<String, Object> tableMap = new HashMap<String, Object>();
         // add each field's data to the 'put'
+        IndexTable indexTable = null;
         for (Field field : datafieldsToFamilyQualifierValue.keySet()) {
         	FamilytoQualifersAndValues familytoQualifersAndValues = datafieldsToFamilyQualifierValue.get(field);
 			familytoQualifersAndValues.addToPut(put);
         	DatabaseField databaseField = field.getAnnotation(DatabaseField.class);
         	if(databaseField.isIndexed()){
-        		Put p = getPutToIndexTable(field, rowkey.toBytes(), familytoQualifersAndValues.getQualiferValue());
-        		putList.add(p);
+        		indexTable = new IndexTable(tablename);
+        		indexTable.add(field, rowkey, familytoQualifersAndValues);
         	}
         }
-        ///TODO evaluate the index table name
-        tableMap.put(tablename, put);
-        tableMap.put(tablename + DataMapperFactory.INDEX_TABLE_SUFFIX, putList);
-        connection.insert(tableMap, put);
+        connection.insert(tablename, put, indexTable);
     }
 
-	public Put getPutToIndexTable(Field field, byte[] value, Map<byte[], Value> qualifierValue) {
-		Put p = null;
-		try{
-			for (byte[] qualifier : qualifierValue.keySet()) {
-				byte[] rowKey = generateRowKey(field, qualifierValue.get(qualifier)); 
-				byte[] indexTableFamilyQualifier = DataMapperFactory.INDEX_ROW_KEY.getBytes();
-				p = new Put(rowKey);
-				p.addColumn(indexTableFamilyQualifier, indexTableFamilyQualifier, value);
-			}
-		}catch (Exception e){
-			LOG.error("Error trying to create PUT object to Index Table", e);
-		}
-		return p;
-	}
-
-	private byte[] generateRowKey(Field field, Value value) {
-		Object obj = ValueFactory.getValue(value);
-		return (field.getName()+":"+obj.toString()).getBytes();
-	}
-	
     public T queryById(Value id, HBaseConnection connection) throws HBaseOrmException {
         byte[] rowkey = id.toBytes();
         Get get = new Get(rowkey);
