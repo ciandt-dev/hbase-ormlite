@@ -6,7 +6,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-public class util {
+public class Utils {
 	private static String methodFromField(Field field, String prefix) {
 		return prefix + field.getName().substring(0, 1).toUpperCase()
 				+ field.getName().substring(1);

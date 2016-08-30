@@ -22,7 +22,7 @@ import com.wlu.orm.hbase.connection.HBaseConnection;
 import com.wlu.orm.hbase.exceptions.HBaseOrmException;
 import com.wlu.orm.hbase.schema.value.Value;
 import com.wlu.orm.hbase.schema.value.ValueFactory;
-import com.wlu.orm.hbase.util.util;
+import com.wlu.orm.hbase.util.Utils;
 
 public class DataMapper<T> {
 	private static Log LOG = LogFactory.getLog(DataMapper.class);
@@ -99,7 +99,7 @@ public class DataMapper<T> {
                 byte[] value = result.getRow();
                 Object fieldinstance = ValueFactory.CreateObject(
                         field.getType(), value);
-                util.setToField(instance, field, fieldinstance);
+                Utils.setToField(instance, field, fieldinstance);
                 continue;
             }
             // datatype info
@@ -115,7 +115,7 @@ public class DataMapper<T> {
                 // convert from byte[] to Object according to field clazz
                 Object fieldinstance = ValueFactory.CreateObject(fieldClazz,
                         value);
-                util.setToField(instance, field, fieldinstance);
+                Utils.setToField(instance, field, fieldinstance);
             } else if (fdt.isList()) {
                 // get qualifier names and add the the list
                 NavigableMap<byte[], byte[]> qvmap = result.getFamilyMap(fqs
@@ -124,7 +124,7 @@ public class DataMapper<T> {
                 for (byte[] q : qvmap.keySet()) {
                     lst.add(Bytes.toString(q));
                 }
-                util.setToField(instance, field, lst);
+                Utils.setToField(instance, field, lst);
             } else if (fdt.isMap()) {
                 // get qualifier-value map and put the map
                 NavigableMap<byte[], byte[]> qvmap = result.getFamilyMap(fqs
@@ -133,13 +133,13 @@ public class DataMapper<T> {
                 for (byte[] q : qvmap.keySet()) {
                     map2.put(Bytes.toString(q), Bytes.toString(qvmap.get(q)));
                 }
-                util.setToField(instance, field, map2);
+                Utils.setToField(instance, field, map2);
             } else if (fdt.isSubLevelClass()) {
                 // get the qualifer-object....
                 Object sublevelObj = createSubLevelObject(
                         fqs.getSubFieldToQualifier(), fdt,
                         result.getFamilyMap(fqs.getFamily()));
-                util.setToField(instance, field, sublevelObj);
+                Utils.setToField(instance, field, sublevelObj);
             }
         }
 
@@ -173,7 +173,7 @@ public class DataMapper<T> {
                 	Object subfieldinstance = ValueFactory.CreateObject(
                 			subfieldClazz, value);
                 	System.out.println(subField.getName());
-                	util.setToField(fieldinstance, subField, subfieldinstance);
+                	Utils.setToField(fieldinstance, subField, subfieldinstance);
                 }
             } else if (subdatatype.isList()) {
                 NavigableMap<byte[], byte[]> qvmap = map;
@@ -181,16 +181,16 @@ public class DataMapper<T> {
                 for (byte[] q : qvmap.keySet()) {
                     lst.add(Bytes.toString(q));
                 }
-                util.setToField(fieldinstance, subField, lst);
+                Utils.setToField(fieldinstance, subField, lst);
             } else if (subdatatype.isMap()) {
                 NavigableMap<byte[], byte[]> qvmap = map;
                 Map<String, String> map2 = new HashMap<String, String>();
                 for (byte[] q : qvmap.keySet()) {
                     map2.put(Bytes.toString(q), Bytes.toString(qvmap.get(q)));
                 }
-                util.setToField(fieldinstance, subField, map2);
+                Utils.setToField(fieldinstance, subField, map2);
             } else {
-                util.setToField(fieldinstance, subField, null);
+                Utils.setToField(fieldinstance, subField, null);
             }
         }
         return fieldinstance;
@@ -244,7 +244,7 @@ public class DataMapper<T> {
             // if is rowkey
             if (rowkeyField.equals(field)) {
                 rowkey = ValueFactory
-                        .Create(util.getFromField(instance, field));
+                        .Create(Utils.getFromField(instance, field));
                 continue;
             }
             FamilyQualifierSchema fq = fixedSchema.get(field);
@@ -256,7 +256,7 @@ public class DataMapper<T> {
 
             // Primitive, family and qualifier name are both specified
             if (fq.getQualifier() != null) {
-                Value value = ValueFactory.Create(util.getFromField(instance,
+                Value value = ValueFactory.Create(Utils.getFromField(instance,
                         field));
                 datafieldsToFamilyQualifierValue.get(field).add(
                         fq.getQualifier(), value);
@@ -266,12 +266,12 @@ public class DataMapper<T> {
                 // to the fixedField
                 if (fdt.isSubLevelClass()/* databasetable.canBeFamily() */) {
                     Map<byte[], Value> qualifierValues = getQualifierValuesFromInstanceAsFamily(
-                            util.getFromField(instance, field), fq, fdt);
+                            Utils.getFromField(instance, field), fq, fdt);
                     datafieldsToFamilyQualifierValue.get(field).add(
                             qualifierValues);
                 } else if (fdt.isList()/* databasefield.isQualiferList() */) {
                     @SuppressWarnings("unchecked")
-                    List<String> list = (List<String>) (util.getFromField(
+                    List<String> list = (List<String>) (Utils.getFromField(
                             instance, field));
 
                     if (list == null) {
@@ -303,7 +303,7 @@ public class DataMapper<T> {
             // if is rowkey
             if (rowkeyField.equals(field)) {
                 try {
-                    rowkey = ValueFactory.Create(util.getFromField(instance,
+                    rowkey = ValueFactory.Create(Utils.getFromField(instance,
                             field));
                 } catch (IllegalArgumentException e) {
                     e.printStackTrace();
@@ -327,7 +327,7 @@ public class DataMapper<T> {
             // if is rowkey
             if (rowkeyField.equals(field)) {
                 rowkey = ValueFactory
-                        .Create(util.getFromField(instance, field));
+                        .Create(Utils.getFromField(instance, field));
                 continue;
             }
             FamilyQualifierSchema fq = fixedSchema.get(field);
@@ -339,7 +339,7 @@ public class DataMapper<T> {
 
             // Primitive, family and qualifier name are both specified
             if (fq.getQualifier() != null) {
-                Value value = ValueFactory.Create(util.getFromField(instance,
+                Value value = ValueFactory.Create(Utils.getFromField(instance,
                         field));
                 datafieldsToFamilyQualifierValue.get(field).add(
                         fq.getQualifier(), value);
@@ -349,12 +349,12 @@ public class DataMapper<T> {
                 // to the fixedField
                 if (fdt.isSubLevelClass()/* databasetable.canBeFamily() */) {
                     Map<byte[], Value> qualifierValues = getQualifierValuesFromInstanceAsFamily(
-                            util.getFromField(instance, field), fq, fdt);
+                            Utils.getFromField(instance, field), fq, fdt);
                     datafieldsToFamilyQualifierValue.get(field).add(
                             qualifierValues);
                 } else if (fdt.isList()/* databasefield.isQualiferList() */) {
                     @SuppressWarnings("unchecked")
-                    List<String> list = (List<String>) (util.getFromField(
+                    List<String> list = (List<String>) (Utils.getFromField(
                             instance, field));
 
                     if (list == null) {
@@ -426,7 +426,7 @@ public class DataMapper<T> {
                     }
                     String qualifier = getDatabaseColumnName(
                             databaseField.qualifierName(), field);
-                    Value value = ValueFactory.Create(util.getFromField(
+                    Value value = ValueFactory.Create(Utils.getFromField(
                             instance, field));
                     qualifierValues.put(Bytes.toBytes(qualifier), value);
 
@@ -435,7 +435,7 @@ public class DataMapper<T> {
                 else if (fdt.getSubLevelDataType(field).isMap()) {
                     // get each key as qualifier and value as value
                     @SuppressWarnings("unchecked")
-                    Map<String, Object> map = (Map<String, Object>) util
+                    Map<String, Object> map = (Map<String, Object>) Utils
                             .getFromField(instance, field);
                     for (String key : map.keySet()) {
                         String qualifier = key;
@@ -448,7 +448,7 @@ public class DataMapper<T> {
                 else if (fdt.getSubLevelDataType(field).isList()) {
                     // not good ...
                     @SuppressWarnings("unchecked")
-                    List<String> list = (List<String>) (util.getFromField(
+                    List<String> list = (List<String>) (Utils.getFromField(
                             instance, field));
                     for (String key : list) {
                         String qualifier = key;

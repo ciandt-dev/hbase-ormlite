@@ -15,7 +15,7 @@ import com.wlu.orm.hbase.schema.DataMapper;
 import com.wlu.orm.hbase.schema.DataMapperFactory;
 import com.wlu.orm.hbase.schema.value.Value;
 import com.wlu.orm.hbase.schema.value.ValueFactory;
-import com.wlu.orm.hbase.util.util;
+import com.wlu.orm.hbase.util.Utils;
 
 public class DaoImpl<T> implements Dao<T> {
 
@@ -88,7 +88,7 @@ public class DaoImpl<T> implements Dao<T> {
     public void deleteById(T data) throws HBaseOrmException {
         Value rowkey = null;
         try {
-            rowkey = ValueFactory.Create(util.getFromField(data,
+            rowkey = ValueFactory.Create(Utils.getFromField(data,
                     dataMapperFactory.rowkeyField));
         } catch (Exception e) {
             throw new HBaseOrmException(e);
@@ -110,7 +110,7 @@ public class DaoImpl<T> implements Dao<T> {
         Value rowkey;
         try {
 
-            rowkey = ValueFactory.Create(util.getFromField(data,
+            rowkey = ValueFactory.Create(Utils.getFromField(data,
                     dataMapperFactory.rowkeyField));
             org.apache.hadoop.hbase.client.Delete delete = new org.apache.hadoop.hbase.client.Delete(
                     rowkey.toBytes());
@@ -139,7 +139,7 @@ public class DaoImpl<T> implements Dao<T> {
         }
         Value rowkey;
         try {
-            rowkey = ValueFactory.Create(util.getFromField(data,
+            rowkey = ValueFactory.Create(Utils.getFromField(data,
                     dataMapperFactory.rowkeyField));
             org.apache.hadoop.hbase.client.Delete delete = new org.apache.hadoop.hbase.client.Delete(
                     rowkey.toBytes());
