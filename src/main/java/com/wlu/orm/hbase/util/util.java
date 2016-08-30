@@ -55,7 +55,7 @@ public class util {
 		return fieldSetMethod;
 	}
 
-	public static <T> Object GetFromField(T instance, Field field)
+	public static <T> Object getFromField(T instance, Field field)
 			throws IllegalArgumentException, IllegalAccessException,
 			InvocationTargetException {
 		Method m = findGetMethod(field);
@@ -65,7 +65,7 @@ public class util {
 		return m.invoke(instance);
 	}
 
-	public static <T> void SetToField(T instance, Field field, Object value)
+	public static <T> void setToField(T instance, Field field, Object value)
 			throws IllegalArgumentException, IllegalAccessException,
 			InvocationTargetException {
 		Method m = findSetMethod(field);

@@ -48,7 +48,7 @@ public class DataMapperFactory<T> {
 		setFixedSchemaAndDataType();
 	}
 
-	public DataMapper<T> Create(T instance) throws HBaseOrmException,
+	public DataMapper<T> create(T instance) throws HBaseOrmException,
 			IllegalArgumentException, IllegalAccessException,
 			InvocationTargetException {
 		// check type
@@ -61,8 +61,8 @@ public class DataMapperFactory<T> {
 		// 1. copy the fixed schema to datafieldToSchema. </br>
 		// 2. fill value according to ... to Value of datafieldToSchema; </br>
 		// notice:
-		dm.CopyToDataFieldSchemaFromFixedSchema();
-		dm.CopyToDataFieldsFromInstance(instance);
+		dm.copyToDataFieldSchemaFromFixedSchema();
+		dm.copyToDataFieldsFromInstance(instance);
 		return dm;
 	}
 
@@ -78,7 +78,7 @@ public class DataMapperFactory<T> {
 	 * @return
 	 * @throws HBaseOrmException
 	 */
-	public DataMapper<T> CreateEmpty(T instance) throws HBaseOrmException {
+	public DataMapper<T> createEmpty(T instance) throws HBaseOrmException {
 		// check type
 		if (!instance.getClass().equals(dataClass)) {
 			return null;
@@ -87,12 +87,12 @@ public class DataMapperFactory<T> {
 		DataMapper<T> dm = new DataMapper<T>(tablename, fixedSchema,
 				fieldDataType, rowkeyField, dataClass);
 
-		dm.CopyToDataFieldSchemaFromFixedSchema();
+		dm.copyToDataFieldSchemaFromFixedSchema();
 
 		return dm;
 	}
 
-	public DataMapper<T> CreateEmpty(Class<?> clazz) throws HBaseOrmException {
+	public DataMapper<T> createEmpty(Class<?> clazz) throws HBaseOrmException {
 		// check type
 		if (!clazz.equals(dataClass)) {
 			return null;
@@ -101,7 +101,7 @@ public class DataMapperFactory<T> {
 		DataMapper<T> dm = new DataMapper<T>(tablename, fixedSchema,
 				fieldDataType, rowkeyField, dataClass);
 
-		dm.CopyToDataFieldSchemaFromFixedSchema();
+		dm.copyToDataFieldSchemaFromFixedSchema();
 
 		return dm;
 	}
@@ -112,7 +112,7 @@ public class DataMapperFactory<T> {
 	 * 
 	 * @return Script to create create the table
 	 */
-	public String TableCreateScript() {
+	public String tableCreateScript() {
 		StringBuffer sb = new StringBuffer();
 		sb.append("create '");
 		sb.append(tablename + "', ");
@@ -125,7 +125,7 @@ public class DataMapperFactory<T> {
 		return sb.toString().substring(0, sb.length() - 1);
 	}
 
-	public HTableDescriptor TableCreateDescriptor() {
+	public HTableDescriptor tableCreateDescriptor() {
 		HTableDescriptor td = new HTableDescriptor(TableName.valueOf(tablename));
 		for (Field field : fixedSchema.keySet()) {
 			FamilyQualifierSchema sc = fixedSchema.get(field);
@@ -136,17 +136,17 @@ public class DataMapperFactory<T> {
 
 	}
 
-	public HTableDescriptor IndexTableCreateDescriptor() {
+	public HTableDescriptor indexTableCreateDescriptor() {
 		HTableDescriptor td = new HTableDescriptor(getIndexTable());
 		td.addFamily(new HColumnDescriptor(INDEX_ROW_KEY));
 		return td;
 	}
 
-	public List<HTableDescriptor> TableCreateDescriptors() {
+	public List<HTableDescriptor> tableCreateDescriptors() {
 		List<HTableDescriptor> tds = new ArrayList<HTableDescriptor>();
-		tds.add(this.TableCreateDescriptor());
+		tds.add(this.tableCreateDescriptor());
 		if (this.isTableIndexed) {
-			tds.add(this.IndexTableCreateDescriptor());
+			tds.add(this.indexTableCreateDescriptor());
 		}
 		return tds;
 	}
@@ -197,7 +197,7 @@ public class DataMapperFactory<T> {
 				this.isTableIndexed = true;
 			}
 
-			FamilyQualifierSchema fqv = FQSchemaAndDataTypeBuildFromField(
+			FamilyQualifierSchema fqv = fqsSchemaAndDataTypeBuildFromField(
 					databaseField, field);
 
 			fixedSchema.put(field, fqv);
@@ -214,7 +214,7 @@ public class DataMapperFactory<T> {
 	 * @return
 	 * @throws HBaseOrmException
 	 */
-	private FamilyQualifierSchema FQSchemaAndDataTypeBuildFromField(
+	private FamilyQualifierSchema fqsSchemaAndDataTypeBuildFromField(
 			DatabaseField databaseField, Field field) throws HBaseOrmException {
 
 		String family;

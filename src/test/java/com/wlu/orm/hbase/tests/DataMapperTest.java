@@ -41,12 +41,12 @@ public class DataMapperTest {
 
 			User user = new User("1234", p, lp, 8080);
 
-			DataMapper<User> dm1 = UserMapperFactory.Create(user);
+			DataMapper<User> dm1 = UserMapperFactory.create(user);
 			DataMapperFactory<Post> PostMapperFactory = new DataMapperFactory<Post>(
 					Post.class);
-			System.out.println(UserMapperFactory.TableCreateScript());
-			DataMapper<Post> postmapper = PostMapperFactory.Create(new Post());
-			System.out.println(PostMapperFactory.TableCreateScript());
+			System.out.println(UserMapperFactory.tableCreateScript());
+			DataMapper<Post> postmapper = PostMapperFactory.create(new Post());
+			System.out.println(PostMapperFactory.tableCreateScript());
 			dm1.insert(hbaseconnection);
 
 		} catch (HBaseOrmException e) {

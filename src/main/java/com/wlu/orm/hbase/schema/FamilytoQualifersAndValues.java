@@ -69,11 +69,11 @@ public class FamilytoQualifersAndValues {
 	 * @param qualifier
 	 * @param value
 	 */
-	public void Add(byte[] qualifier, Value value) {
+	public void add(byte[] qualifier, Value value) {
 		qualifierValue.put(qualifier, value);
 	}
 
-	public void Add(Map<byte[], Value> qualifierValues) {
+	public void add(Map<byte[], Value> qualifierValues) {
 		if (qualifierValues == null) {
 			return;
 		}

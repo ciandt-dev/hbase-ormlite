@@ -40,8 +40,8 @@ public class DaoImpl<T> implements Dao<T> {
         if (hbaseConnection.tableExists(dataMapperFactory.getIndexTable().getNameAsString())) {
             hbaseConnection.deleteTable(dataMapperFactory.getIndexTable().getNameAsString());
         }
-        hbaseConnection.createTables(dataMapperFactory.TableCreateDescriptors());
-        LOG.info(dataMapperFactory.TableCreateScript());
+        hbaseConnection.createTables(dataMapperFactory.tableCreateDescriptors());
+        LOG.info(dataMapperFactory.tableCreateScript());
     }
 
     @Override
@@ -50,8 +50,8 @@ public class DaoImpl<T> implements Dao<T> {
             LOG.info("The table has already existed, will not recreate it.");
             return;
         }
-        hbaseConnection.createTables(dataMapperFactory.TableCreateDescriptors());
-        LOG.info(dataMapperFactory.TableCreateScript());
+        hbaseConnection.createTables(dataMapperFactory.tableCreateDescriptors());
+        LOG.info(dataMapperFactory.tableCreateScript());
     }
 
     @Override
@@ -64,7 +64,7 @@ public class DaoImpl<T> implements Dao<T> {
         }
         DataMapper<T> dataMapper = null;
         try {
-            dataMapper = dataMapperFactory.Create(data);
+            dataMapper = dataMapperFactory.create(data);
             dataMapper.insert(hbaseConnection);
         } catch (Exception e) {
             throw new HBaseOrmException(e);
@@ -88,7 +88,7 @@ public class DaoImpl<T> implements Dao<T> {
     public void deleteById(T data) throws HBaseOrmException {
         Value rowkey = null;
         try {
-            rowkey = ValueFactory.Create(util.GetFromField(data,
+            rowkey = ValueFactory.Create(util.getFromField(data,
                     dataMapperFactory.rowkeyField));
         } catch (Exception e) {
             throw new HBaseOrmException(e);
@@ -110,7 +110,7 @@ public class DaoImpl<T> implements Dao<T> {
         Value rowkey;
         try {
 
-            rowkey = ValueFactory.Create(util.GetFromField(data,
+            rowkey = ValueFactory.Create(util.getFromField(data,
                     dataMapperFactory.rowkeyField));
             org.apache.hadoop.hbase.client.Delete delete = new org.apache.hadoop.hbase.client.Delete(
                     rowkey.toBytes());
@@ -139,7 +139,7 @@ public class DaoImpl<T> implements Dao<T> {
         }
         Value rowkey;
         try {
-            rowkey = ValueFactory.Create(util.GetFromField(data,
+            rowkey = ValueFactory.Create(util.getFromField(data,
                     dataMapperFactory.rowkeyField));
             org.apache.hadoop.hbase.client.Delete delete = new org.apache.hadoop.hbase.client.Delete(
                     rowkey.toBytes());
@@ -217,9 +217,9 @@ public class DaoImpl<T> implements Dao<T> {
             return;
         }
         try {
-            DataMapper<T> dm = dataMapperFactory.CreateEmpty(data);
-            dm.SetRowKey(data);
-            dm.SetFieldValue(data, familyFieldName);
+            DataMapper<T> dm = dataMapperFactory.createEmpty(data);
+            dm.setRowKey(data);
+            dm.setFieldValue(data, familyFieldName);
             dm.insert(hbaseConnection);
         } catch (Exception e) {
             throw new HBaseOrmException(e);
@@ -228,7 +228,7 @@ public class DaoImpl<T> implements Dao<T> {
 
     @Override
     public T queryById(Value id) throws HBaseOrmException {
-        DataMapper<T> dm = dataMapperFactory.CreateEmpty(dataClass);
+        DataMapper<T> dm = dataMapperFactory.createEmpty(dataClass);
         if (dm == null) {
             return null;
         }

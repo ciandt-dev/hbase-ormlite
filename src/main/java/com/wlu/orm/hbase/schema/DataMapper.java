@@ -80,13 +80,13 @@ public class DataMapper<T> {
         try {
             result = connection.query(Bytes.toBytes(tablename), get);
 
-            return CreateObjectFromResult(result);
+            return createObjectFromResult(result);
         } catch (Exception e) {
             throw new HBaseOrmException(e);
         }
     }
 
-    private T CreateObjectFromResult(Result result) throws SecurityException,
+    private T createObjectFromResult(Result result) throws SecurityException,
             NoSuchMethodException, IllegalArgumentException,
             InstantiationException, IllegalAccessException,
             InvocationTargetException {
@@ -99,7 +99,7 @@ public class DataMapper<T> {
                 byte[] value = result.getRow();
                 Object fieldinstance = ValueFactory.CreateObject(
                         field.getType(), value);
-                util.SetToField(instance, field, fieldinstance);
+                util.setToField(instance, field, fieldinstance);
                 continue;
             }
             // datatype info
@@ -115,7 +115,7 @@ public class DataMapper<T> {
                 // convert from byte[] to Object according to field clazz
                 Object fieldinstance = ValueFactory.CreateObject(fieldClazz,
                         value);
-                util.SetToField(instance, field, fieldinstance);
+                util.setToField(instance, field, fieldinstance);
             } else if (fdt.isList()) {
                 // get qualifier names and add the the list
                 NavigableMap<byte[], byte[]> qvmap = result.getFamilyMap(fqs
@@ -124,7 +124,7 @@ public class DataMapper<T> {
                 for (byte[] q : qvmap.keySet()) {
                     lst.add(Bytes.toString(q));
                 }
-                util.SetToField(instance, field, lst);
+                util.setToField(instance, field, lst);
             } else if (fdt.isMap()) {
                 // get qualifier-value map and put the map
                 NavigableMap<byte[], byte[]> qvmap = result.getFamilyMap(fqs
@@ -133,13 +133,13 @@ public class DataMapper<T> {
                 for (byte[] q : qvmap.keySet()) {
                     map2.put(Bytes.toString(q), Bytes.toString(qvmap.get(q)));
                 }
-                util.SetToField(instance, field, map2);
+                util.setToField(instance, field, map2);
             } else if (fdt.isSubLevelClass()) {
                 // get the qualifer-object....
-                Object sublevelObj = CreateSubLevelObject(
+                Object sublevelObj = createSubLevelObject(
                         fqs.getSubFieldToQualifier(), fdt,
                         result.getFamilyMap(fqs.getFamily()));
-                util.SetToField(instance, field, sublevelObj);
+                util.setToField(instance, field, sublevelObj);
             }
         }
 
@@ -149,7 +149,7 @@ public class DataMapper<T> {
         return RetObject;
     }
 
-    private Object CreateSubLevelObject(
+    private Object createSubLevelObject(
             Map<String, byte[]> subfieldToQualifier, FieldDataType fdt,
             NavigableMap<byte[], byte[]> map) throws SecurityException,
             NoSuchMethodException, IllegalArgumentException,
@@ -173,7 +173,7 @@ public class DataMapper<T> {
                 	Object subfieldinstance = ValueFactory.CreateObject(
                 			subfieldClazz, value);
                 	System.out.println(subField.getName());
-                	util.SetToField(fieldinstance, subField, subfieldinstance);
+                	util.setToField(fieldinstance, subField, subfieldinstance);
                 }
             } else if (subdatatype.isList()) {
                 NavigableMap<byte[], byte[]> qvmap = map;
@@ -181,16 +181,16 @@ public class DataMapper<T> {
                 for (byte[] q : qvmap.keySet()) {
                     lst.add(Bytes.toString(q));
                 }
-                util.SetToField(fieldinstance, subField, lst);
+                util.setToField(fieldinstance, subField, lst);
             } else if (subdatatype.isMap()) {
                 NavigableMap<byte[], byte[]> qvmap = map;
                 Map<String, String> map2 = new HashMap<String, String>();
                 for (byte[] q : qvmap.keySet()) {
                     map2.put(Bytes.toString(q), Bytes.toString(qvmap.get(q)));
                 }
-                util.SetToField(fieldinstance, subField, map2);
+                util.setToField(fieldinstance, subField, map2);
             } else {
-                util.SetToField(fieldinstance, subField, null);
+                util.setToField(fieldinstance, subField, null);
             }
         }
         return fieldinstance;
@@ -202,7 +202,7 @@ public class DataMapper<T> {
      *
      * @throws HBaseOrmException
      */
-    public void CopyToDataFieldSchemaFromFixedSchema() throws HBaseOrmException {
+    public void copyToDataFieldSchemaFromFixedSchema() throws HBaseOrmException {
         datafieldsToFamilyQualifierValue = new HashMap<Field, FamilytoQualifersAndValues>();
         for (Field field : fixedSchema.keySet()) {
             FamilyQualifierSchema fqv = fixedSchema.get(field);
@@ -237,14 +237,14 @@ public class DataMapper<T> {
      * @throws IllegalAccessException
      * @throws InvocationTargetException
      */
-    public void CopyToDataFieldsFromInstance(T instance)
+    public void copyToDataFieldsFromInstance(T instance)
             throws IllegalArgumentException, HBaseOrmException,
             IllegalAccessException, InvocationTargetException {
         for (Field field : instance.getClass().getDeclaredFields()) {
             // if is rowkey
             if (rowkeyField.equals(field)) {
                 rowkey = ValueFactory
-                        .Create(util.GetFromField(instance, field));
+                        .Create(util.getFromField(instance, field));
                 continue;
             }
             FamilyQualifierSchema fq = fixedSchema.get(field);
@@ -256,22 +256,22 @@ public class DataMapper<T> {
 
             // Primitive, family and qualifier name are both specified
             if (fq.getQualifier() != null) {
-                Value value = ValueFactory.Create(util.GetFromField(instance,
+                Value value = ValueFactory.Create(util.getFromField(instance,
                         field));
-                datafieldsToFamilyQualifierValue.get(field).Add(
+                datafieldsToFamilyQualifierValue.get(field).add(
                         fq.getQualifier(), value);
             } else {
                 // user defined class or a list as family data <br/>
                 // 1. user defined class, need to add fixed qualifer informtion
                 // to the fixedField
                 if (fdt.isSubLevelClass()/* databasetable.canBeFamily() */) {
-                    Map<byte[], Value> qualifierValues = GetQualifierValuesFromInstanceAsFamily(
-                            util.GetFromField(instance, field), fq, fdt);
-                    datafieldsToFamilyQualifierValue.get(field).Add(
+                    Map<byte[], Value> qualifierValues = getQualifierValuesFromInstanceAsFamily(
+                            util.getFromField(instance, field), fq, fdt);
+                    datafieldsToFamilyQualifierValue.get(field).add(
                             qualifierValues);
                 } else if (fdt.isList()/* databasefield.isQualiferList() */) {
                     @SuppressWarnings("unchecked")
-                    List<String> list = (List<String>) (util.GetFromField(
+                    List<String> list = (List<String>) (util.getFromField(
                             instance, field));
 
                     if (list == null) {
@@ -281,7 +281,7 @@ public class DataMapper<T> {
                         String qualifier = key;
                         Value value = ValueFactory.Create(null);
 
-                        datafieldsToFamilyQualifierValue.get(field).Add(
+                        datafieldsToFamilyQualifierValue.get(field).add(
                                 Bytes.toBytes(qualifier), value);
                     }
                 } else if (fdt.isMap()) {
@@ -298,12 +298,12 @@ public class DataMapper<T> {
      *
      * @param instance
      */
-    public void SetRowKey(T instance) {
+    public void setRowKey(T instance) {
         for (Field field : instance.getClass().getDeclaredFields()) {
             // if is rowkey
             if (rowkeyField.equals(field)) {
                 try {
-                    rowkey = ValueFactory.Create(util.GetFromField(instance,
+                    rowkey = ValueFactory.Create(util.getFromField(instance,
                             field));
                 } catch (IllegalArgumentException e) {
                     e.printStackTrace();
@@ -317,7 +317,7 @@ public class DataMapper<T> {
         }
     }
 
-    public void SetFieldValue(T instance, List<String> fieldName)
+    public void setFieldValue(T instance, List<String> fieldName)
             throws IllegalArgumentException, IllegalAccessException,
             InvocationTargetException, HBaseOrmException {
         for (Field field : instance.getClass().getDeclaredFields()) {
@@ -327,7 +327,7 @@ public class DataMapper<T> {
             // if is rowkey
             if (rowkeyField.equals(field)) {
                 rowkey = ValueFactory
-                        .Create(util.GetFromField(instance, field));
+                        .Create(util.getFromField(instance, field));
                 continue;
             }
             FamilyQualifierSchema fq = fixedSchema.get(field);
@@ -339,22 +339,22 @@ public class DataMapper<T> {
 
             // Primitive, family and qualifier name are both specified
             if (fq.getQualifier() != null) {
-                Value value = ValueFactory.Create(util.GetFromField(instance,
+                Value value = ValueFactory.Create(util.getFromField(instance,
                         field));
-                datafieldsToFamilyQualifierValue.get(field).Add(
+                datafieldsToFamilyQualifierValue.get(field).add(
                         fq.getQualifier(), value);
             } else {
                 // user defined class or a list as family data <br/>
                 // 1. user defined class, need to add fixed qualifer informtion
                 // to the fixedField
                 if (fdt.isSubLevelClass()/* databasetable.canBeFamily() */) {
-                    Map<byte[], Value> qualifierValues = GetQualifierValuesFromInstanceAsFamily(
-                            util.GetFromField(instance, field), fq, fdt);
-                    datafieldsToFamilyQualifierValue.get(field).Add(
+                    Map<byte[], Value> qualifierValues = getQualifierValuesFromInstanceAsFamily(
+                            util.getFromField(instance, field), fq, fdt);
+                    datafieldsToFamilyQualifierValue.get(field).add(
                             qualifierValues);
                 } else if (fdt.isList()/* databasefield.isQualiferList() */) {
                     @SuppressWarnings("unchecked")
-                    List<String> list = (List<String>) (util.GetFromField(
+                    List<String> list = (List<String>) (util.getFromField(
                             instance, field));
 
                     if (list == null) {
@@ -364,7 +364,7 @@ public class DataMapper<T> {
                         String qualifier = key;
                         Value value = ValueFactory.Create(null);
 
-                        datafieldsToFamilyQualifierValue.get(field).Add(
+                        datafieldsToFamilyQualifierValue.get(field).add(
                                 Bytes.toBytes(qualifier), value);
                     }
                 } else if (fdt.isMap()) {
@@ -377,7 +377,7 @@ public class DataMapper<T> {
 
     }
 
-    public void SetFieldValue(T instance, String fieldName, String subFieldName) {
+    public void setFieldValue(T instance, String fieldName, String subFieldName) {
 
     }
 
@@ -396,7 +396,7 @@ public class DataMapper<T> {
      * @throws IllegalAccessException
      * @throws InvocationTargetException
      */
-    private Map<byte[], Value> GetQualifierValuesFromInstanceAsFamily(
+    private Map<byte[], Value> getQualifierValuesFromInstanceAsFamily(
             Object instance, FamilyQualifierSchema fqs, FieldDataType fdt)
             throws HBaseOrmException, IllegalArgumentException,
             IllegalAccessException, InvocationTargetException {
@@ -426,7 +426,7 @@ public class DataMapper<T> {
                     }
                     String qualifier = getDatabaseColumnName(
                             databaseField.qualifierName(), field);
-                    Value value = ValueFactory.Create(util.GetFromField(
+                    Value value = ValueFactory.Create(util.getFromField(
                             instance, field));
                     qualifierValues.put(Bytes.toBytes(qualifier), value);
 
@@ -436,7 +436,7 @@ public class DataMapper<T> {
                     // get each key as qualifier and value as value
                     @SuppressWarnings("unchecked")
                     Map<String, Object> map = (Map<String, Object>) util
-                            .GetFromField(instance, field);
+                            .getFromField(instance, field);
                     for (String key : map.keySet()) {
                         String qualifier = key;
                         Value value = ValueFactory.Create(map.get(key));
@@ -448,7 +448,7 @@ public class DataMapper<T> {
                 else if (fdt.getSubLevelDataType(field).isList()) {
                     // not good ...
                     @SuppressWarnings("unchecked")
-                    List<String> list = (List<String>) (util.GetFromField(
+                    List<String> list = (List<String>) (util.getFromField(
                             instance, field));
                     for (String key : list) {
                         String qualifier = key;
