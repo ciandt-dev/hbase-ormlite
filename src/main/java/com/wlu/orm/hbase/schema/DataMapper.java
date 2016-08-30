@@ -27,7 +27,10 @@ import com.wlu.orm.hbase.util.util;
 public class DataMapper<T> {
 	private static Log LOG = LogFactory.getLog(DataMapper.class);
     // fixed schema for the generic type T, copy from the factory
-    public String tablename;
+    private String tablename;
+
+    private IndexTable indexTable;
+
     public Map<Field, FamilyQualifierSchema> fixedSchema;
     public Map<Field, FieldDataType> fieldDataType;
     public Field rowkeyField;
@@ -55,14 +58,15 @@ public class DataMapper<T> {
     // insert the instance to HBase
     public void insert(HBaseConnection connection) throws IOException {
         Put put = new Put(rowkey.toBytes());
-        // add each field's data to the 'put'
-        IndexTable indexTable = null;
+        
         for (Field field : datafieldsToFamilyQualifierValue.keySet()) {
         	FamilytoQualifersAndValues familytoQualifersAndValues = datafieldsToFamilyQualifierValue.get(field);
 			familytoQualifersAndValues.addToPut(put);
         	DatabaseField databaseField = field.getAnnotation(DatabaseField.class);
         	if(databaseField.isIndexed()){
-        		indexTable = new IndexTable(tablename);
+        		if(indexTable == null){
+        			indexTable = new IndexTable(tablename);
+        		}
         		indexTable.add(field, rowkey, familytoQualifersAndValues);
         	}
         }
@@ -472,4 +476,11 @@ public class DataMapper<T> {
         return string;
     }
 
+	public String getTablename() {
+		return tablename;
+	}
+
+	public IndexTable getIndexTable() {
+		return indexTable;
+	}
 }

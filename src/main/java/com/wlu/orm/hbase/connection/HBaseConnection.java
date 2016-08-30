@@ -3,7 +3,6 @@ package com.wlu.orm.hbase.connection;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
@@ -57,6 +56,20 @@ public class HBaseConnection implements Closeable{
         }
     }
 
+    /**
+     * insert put to the main table and Index table with name <code>tablename</code>
+     *
+     * @param tablename
+     * @param put
+     * @throws IOException
+     */
+    public void insert(String tablename, Put put, IndexTable indexTable) throws IOException {
+    	insert(tablename.getBytes(),put);
+    	if(indexTable != null){
+    		insert(indexTable.getTableName().getBytes(), indexTable.getPut());
+    	}
+    }
+    
     private void insert(byte[] tablename, List<Put> list) throws IOException {
         Table htable = connection.getTable(TableName.valueOf(tablename));
         try {
@@ -65,15 +78,7 @@ public class HBaseConnection implements Closeable{
             htable.close();
         }
 	}
-    
-	public void insert(String tablename, Put put, IndexTable indexTable) throws IOException {
-		insert(tablename.getBytes(),put);
-		if(indexTable != null){
-			String tableNameIndex = indexTable.getTableNameIndex();
-			insert(tableNameIndex.getBytes(), indexTable.getPutList());
-		}
-	}
-	
+
 	/**
      * Delete the whole row of table with name <code>tablename</code>
      *

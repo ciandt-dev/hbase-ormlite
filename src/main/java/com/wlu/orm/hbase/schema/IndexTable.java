@@ -26,10 +26,10 @@ public class IndexTable {
 
 	private List<Put> putList;
 
-	private String tableNameIndex;
+	private String tableName;
 
 	public IndexTable(String tablename) {
-		tableNameIndex = tablename + DataMapperFactory.INDEX_TABLE_SUFFIX;
+		tableName = tablename + DataMapperFactory.INDEX_TABLE_SUFFIX;
 	}
 
 	public void add(Field field, Value rowkey, FamilytoQualifersAndValues familytoQualifersAndValues) {
@@ -54,11 +54,11 @@ public class IndexTable {
 		putList.add(put);
 	}
 
-	public List<Put> getPutList() {
+	public List<Put> getPut() {
 		return putList;
 	}
 
-	public String getTableNameIndex() {
-		return tableNameIndex;
+	public String getTableName() {
+		return tableName;
 	}
 }
