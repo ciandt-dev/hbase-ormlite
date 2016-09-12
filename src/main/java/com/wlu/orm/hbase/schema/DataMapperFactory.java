@@ -33,9 +33,6 @@ public class DataMapperFactory<T> {
 	public Field rowkeyField;
 	public Class<?> dataClass;
 
-	protected static final String INDEX_TABLE_SUFFIX = "Index";
-	protected static final String INDEX_ROW_KEY = "key";
-
 	private boolean isTableIndexed = false;
 
 	public DataMapperFactory(Class<T> dataClass_) throws HBaseOrmException {
@@ -138,7 +135,7 @@ public class DataMapperFactory<T> {
 
 	public HTableDescriptor indexTableCreateDescriptor() {
 		HTableDescriptor td = new HTableDescriptor(getIndexTable());
-		td.addFamily(new HColumnDescriptor(INDEX_ROW_KEY));
+		td.addFamily(new HColumnDescriptor(IndexTable.INDEX_ROW_KEY));
 		return td;
 	}
 
@@ -152,7 +149,7 @@ public class DataMapperFactory<T> {
 	}
 
     public TableName getIndexTable() {
-        return TableName.valueOf(tablename + INDEX_TABLE_SUFFIX);
+        return TableName.valueOf(tablename + IndexTable.INDEX_TABLE_SUFFIX);
     }
 
 	/**
@@ -266,6 +263,22 @@ public class DataMapperFactory<T> {
 			fieldDataType.put(field,
 					new FieldDataType(FieldDataType.MAP, field.getType()));
 		} else if (field.getType().equals(Date.class)) {
+			if (databaseField.familyName().length() == 0) {
+				throw new HBaseOrmException(
+						"For primitive typed field "
+								+ dataClass.getName()
+								+ "."
+								+ field.getName()
+								+ " we must define family with annotation: familyName=\"familyname\".");
+			} else {
+				family = getDatabaseColumnName(databaseField.familyName(),
+						field);
+				qualifier = getDatabaseColumnName(
+						databaseField.qualifierName(), field);
+				fieldDataType.put(field, new FieldDataType(
+						FieldDataType.PRIMITIVE, field.getType()));
+			}
+		}else if (field.getType().equals(Long.class)) {
 			if (databaseField.familyName().length() == 0) {
 				throw new HBaseOrmException(
 						"For primitive typed field "

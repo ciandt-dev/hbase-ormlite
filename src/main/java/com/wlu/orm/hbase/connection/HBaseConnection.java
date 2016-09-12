@@ -2,6 +2,8 @@ package com.wlu.orm.hbase.connection;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
@@ -15,13 +17,17 @@ import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.client.ResultScanner;
+import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.client.Table;
+import org.apache.log4j.Logger;
 
 import com.wlu.orm.hbase.schema.IndexTable;
 
 
 public class HBaseConnection implements Closeable{
 
+	private static Logger LOG = Logger.getLogger(HBaseConnection.class);
     protected Connection connection;
     protected Admin admin;
 
@@ -50,7 +56,10 @@ public class HBaseConnection implements Closeable{
     public void insert(byte[] tablename, Put put) throws IOException {
         Table htable = connection.getTable(TableName.valueOf(tablename));
         try {
+			Instant start = Instant.now();
             htable.put(put);
+            Instant end = Instant.now();
+            LOG.debug("############  Inserting put done! | Duration: " + Duration.between(start, end) + " #############");
         } finally {
             htable.close();
         }
@@ -73,7 +82,10 @@ public class HBaseConnection implements Closeable{
     private void insert(byte[] tablename, List<Put> list) throws IOException {
         Table htable = connection.getTable(TableName.valueOf(tablename));
         try {
+			Instant start = Instant.now();
             htable.put(list);
+            Instant end = Instant.now();
+            LOG.debug("############  Inserting list put done! | Duration: " + Duration.between(start, end) + " #############");
         } finally {
             htable.close();
         }
@@ -104,9 +116,20 @@ public class HBaseConnection implements Closeable{
             table.close();
         }
         return result;
-
     }
 
+    public ResultScanner queryPrefix(byte[] tablename, Scan scan) throws IOException {
+        Table table =  connection.getTable(TableName.valueOf(tablename));
+        ResultScanner result = null;
+        try {
+            result = table.getScanner(scan);
+
+        } finally {
+            table.close();
+        }
+        return result;
+    }
+    
     public boolean tableExists(final String tableName) throws IOException {
         return admin.tableExists(TableName.valueOf(tableName));
     }
@@ -128,6 +151,7 @@ public class HBaseConnection implements Closeable{
 
 	@Override
 	public void close() throws IOException {
+		LOG.debug("Closing HBaseConnection Reources");
 		if(connection != null){
 			connection.close();
 		}

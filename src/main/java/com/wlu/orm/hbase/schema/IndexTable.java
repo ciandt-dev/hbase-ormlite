@@ -4,11 +4,14 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.client.Put;
 
+import com.wlu.orm.hbase.schema.value.NullValue;
+import com.wlu.orm.hbase.schema.value.StringValue;
 import com.wlu.orm.hbase.schema.value.Value;
 import com.wlu.orm.hbase.schema.value.ValueFactory;
 
@@ -22,14 +25,20 @@ public class IndexTable {
 
 	private static Log LOG = LogFactory.getLog(IndexTable.class);
 
-	private static byte[] indexTableFamilyQualifier = DataMapperFactory.INDEX_ROW_KEY.getBytes();
-
-	private List<Put> putList;
+	private List<Put> putList = new ArrayList<Put>();
 
 	private String tableName;
+	
+	protected static final String INDEX_TABLE_SUFFIX = "Index";
 
+	protected static final String INDEX_ROW_KEY = "key";
+	
+	public static final byte[] INDEX_TABLE_FAMILY_QUALIFIER = IndexTable.INDEX_ROW_KEY.getBytes();
+    
+	public static final String KEY_SPLIT = ":";
+	
 	public IndexTable(String tablename) {
-		tableName = tablename + DataMapperFactory.INDEX_TABLE_SUFFIX;
+		tableName = tablename + IndexTable.INDEX_TABLE_SUFFIX;
 	}
 
 	public void add(Field field, Value rowkey, FamilytoQualifersAndValues familytoQualifersAndValues) {
@@ -37,20 +46,21 @@ public class IndexTable {
 		byte[] value = rowkey.toBytes();
 		Map<byte[], Value> qualifierValue = familytoQualifersAndValues.getQualiferValue();
 		for (byte[] qualifier : qualifierValue.keySet()) {
-			byte[] rowKey = generateRowKey(field, qualifierValue.get(qualifier)); 
-			addPut(new Put(rowKey).addColumn(indexTableFamilyQualifier, indexTableFamilyQualifier, value));
+			Value v = qualifierValue.get(qualifier);
+			//if the field used as 2 table index is null, escape it
+			if(v instanceof NullValue)
+				continue;
+			byte[] indexRowKey = generateIndexRowKey(field, v, rowkey); 
+			addPut(new Put(indexRowKey).addColumn(INDEX_TABLE_FAMILY_QUALIFIER, INDEX_TABLE_FAMILY_QUALIFIER, value));
 		}
 	}
 
-	private byte[] generateRowKey(Field field, Value value) {
+	public byte[] generateIndexRowKey(Field field, Value value, Value rowkey) {
 		Object obj = ValueFactory.getValue(value);
-		return (field.getName()+":"+obj.toString()).getBytes();
+		return (field.getName() + KEY_SPLIT + (obj.toString()) + KEY_SPLIT + ((StringValue)rowkey).getStringValue()).getBytes();
 	}
 
 	public void addPut(Put put){
-		if(putList == null){
-			putList = new ArrayList<Put>();
-		}
 		putList.add(put);
 	}
 

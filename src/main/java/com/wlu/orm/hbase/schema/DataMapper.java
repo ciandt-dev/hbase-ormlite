@@ -15,11 +15,15 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.client.ResultScanner;
+import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.filter.PrefixFilter;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import com.wlu.orm.hbase.annotation.DatabaseField;
 import com.wlu.orm.hbase.connection.HBaseConnection;
 import com.wlu.orm.hbase.exceptions.HBaseOrmException;
+import com.wlu.orm.hbase.schema.value.StringValue;
 import com.wlu.orm.hbase.schema.value.Value;
 import com.wlu.orm.hbase.schema.value.ValueFactory;
 import com.wlu.orm.hbase.util.Utils;
@@ -49,6 +53,7 @@ public class DataMapper<T> {
                       Map<Field, FieldDataType> fieldDataType, Field rowkeyField,
                       Class<?> dataClass) {
         this.tablename = tablename;
+        this.indexTable = new IndexTable(tablename);
         this.fieldDataType = fieldDataType;
         this.fixedSchema = fixedSchema;
         this.rowkeyField = rowkeyField;
@@ -64,9 +69,6 @@ public class DataMapper<T> {
 			familytoQualifersAndValues.addToPut(put);
         	DatabaseField databaseField = field.getAnnotation(DatabaseField.class);
         	if(databaseField.isIndexed()){
-        		if(indexTable == null){
-        			indexTable = new IndexTable(tablename);
-        		}
         		indexTable.add(field, rowkey, familytoQualifersAndValues);
         	}
         }
@@ -75,6 +77,10 @@ public class DataMapper<T> {
 
     public T queryById(Value id, HBaseConnection connection) throws HBaseOrmException {
         byte[] rowkey = id.toBytes();
+        return queryById(rowkey, connection);
+    }
+    
+    public T queryById(byte[] rowkey, HBaseConnection connection) throws HBaseOrmException {
         Get get = new Get(rowkey);
         Result result = null;
         try {
@@ -85,7 +91,26 @@ public class DataMapper<T> {
             throw new HBaseOrmException(e);
         }
     }
-
+    
+    public List<String> queryByIndexTable(Field field, Value id, HBaseConnection connection) throws HBaseOrmException {
+        ResultScanner result = null;
+        try {
+        	byte[] prefix = indexTable.generateIndexRowKey(field, id, new StringValue(""));
+			Scan scan = new Scan(prefix);
+        	PrefixFilter prefixFilter = new PrefixFilter(prefix);
+        	scan.setFilter(prefixFilter);
+        	
+            result = connection.queryPrefix(Bytes.toBytes(indexTable.getTableName()), scan);
+            List<String> list = new ArrayList<String>();
+            result.forEach(c -> {
+            	list.add(Bytes.toString(c.value()));	
+            });
+            return list;
+        } catch (Exception e) {
+            throw new HBaseOrmException(e);
+        }
+    }
+    
     private T createObjectFromResult(Result result) throws SecurityException,
             NoSuchMethodException, IllegalArgumentException,
             InstantiationException, IllegalAccessException,
@@ -167,12 +192,11 @@ public class DataMapper<T> {
             } else if (subdatatype.isPrimitive()) {
                 byte[] value = map
                         .get(subfieldToQualifier.get(fieldstringname));
-                if(value.length > 0){
+                if(value!= null && value.length > 0){
                 	Class<?> subfieldClazz = subdatatype.dataclass;
                 	// convert from byte[] to Object according to field clazz
                 	Object subfieldinstance = ValueFactory.CreateObject(
                 			subfieldClazz, value);
-                	System.out.println(subField.getName());
                 	Utils.setToField(fieldinstance, subField, subfieldinstance);
                 }
             } else if (subdatatype.isList()) {
@@ -279,10 +303,10 @@ public class DataMapper<T> {
                     }
                     for (String key : list) {
                         String qualifier = key;
-                        Value value = ValueFactory.Create(null);
+                        Value value = ValueFactory.Create(qualifier);
 
                         datafieldsToFamilyQualifierValue.get(field).add(
-                                Bytes.toBytes(qualifier), value);
+                                value.toBytes(), value);
                     }
                 } else if (fdt.isMap()) {
                     // 2. Map

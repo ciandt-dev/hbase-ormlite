@@ -1,6 +1,10 @@
 package com.wlu.orm.hbase.schema.value;
 
 import java.lang.reflect.InvocationTargetException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Date;
 
 import org.apache.hadoop.hbase.util.Bytes;
@@ -10,6 +14,7 @@ import org.apache.hadoop.hbase.util.Bytes;
 public class ValueFactory {
 
 	static Class<Integer> INTEGER = Integer.class;
+	static Class<Long> LONG = Long.class;
 	static Class<Double> DOUBLE = Double.class;
 	static Class<Float> FLOAT = Float.class;
 	static Class<String> STRING = String.class;
@@ -18,13 +23,15 @@ public class ValueFactory {
 
 	public static <T> Value Create(T instance) {
 
-		if (instance == null) {
+		if (instance == null || instance.equals("null")) {
 			return new NullValue();
 		}
 
 		Class<? extends Object> instanceClass = instance.getClass();
 		if (instanceClass.equals(INTEGER)) {
 			return new IntValue((Integer) instance);
+		} else if (instanceClass.equals(LONG)) {
+			return new LongValue((Long) instance);
 		} else if (instanceClass.equals(DOUBLE)) {
 			return new DoubleValue((Double) instance);
 		} else if (instanceClass.equals(FLOAT)) {
@@ -59,6 +66,8 @@ public class ValueFactory {
 			return new Boolean(Bytes.toBoolean(bytes));
 		} else if (clazz.equals(INTEGER)) {
 			return new Integer(Bytes.toInt(bytes));
+		} else if (clazz.equals(LONG)) {
+			return new Long(Bytes.toLong(bytes));
 		} else if (clazz.equals(DOUBLE)) {
 			return new Double(Bytes.toDouble(bytes));
 		} else if (clazz.equals(FLOAT)) {
@@ -66,7 +75,14 @@ public class ValueFactory {
 		} else if (clazz.equals(STRING)) {
 			return new String(Bytes.toString(bytes));
 		} else if (clazz.equals(DATE)) {
-			return new Date(Bytes.toInt(bytes));
+			//FIXME
+			String s = Arrays.toString(bytes);
+			try {
+				return new SimpleDateFormat("ddMMyyyy").parse(s);
+			} catch (ParseException e) {
+				//skip it
+			}
+			return new Date();
 		} else {
 			return null;
 		}
@@ -75,6 +91,8 @@ public class ValueFactory {
 		Class<? extends Value> clazz = value.getClass();
 		if (clazz.equals(IntValue.class)) {
 			return ((IntValue)value).getIntValue();
+		} else if (clazz.equals(LongValue.class)) {
+			return ((LongValue)value).getLongValue();
 		} else if (clazz.equals(DoubleValue.class)) {
 			return ((DoubleValue)value).getDoubleValue();
 		} else if (clazz.equals(FloatValue.class)) {

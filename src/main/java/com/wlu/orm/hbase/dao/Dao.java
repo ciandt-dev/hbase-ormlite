@@ -1,6 +1,7 @@
 package com.wlu.orm.hbase.dao;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.List;
 
 import com.wlu.orm.hbase.exceptions.HBaseOrmException;
@@ -95,4 +96,12 @@ public interface Dao<T> {
 	 * @return
 	 */
 	public List<T> queryWithFilter(String filter);
+
+	/**
+	 * @param field
+	 * @param id
+	 * @return
+	 * @throws HBaseOrmException
+	 */
+	List<T> queryByIndexTable(String key) throws HBaseOrmException;
 }

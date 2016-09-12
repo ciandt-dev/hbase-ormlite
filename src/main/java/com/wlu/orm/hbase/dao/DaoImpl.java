@@ -4,22 +4,26 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.util.Bytes;
 
+import com.wlu.orm.hbase.annotation.DatabaseField;
 import com.wlu.orm.hbase.connection.HBaseConnection;
 import com.wlu.orm.hbase.exceptions.HBaseOrmException;
 import com.wlu.orm.hbase.schema.DataMapper;
 import com.wlu.orm.hbase.schema.DataMapperFactory;
+import com.wlu.orm.hbase.schema.IndexTable;
+import com.wlu.orm.hbase.schema.value.StringValue;
 import com.wlu.orm.hbase.schema.value.Value;
 import com.wlu.orm.hbase.schema.value.ValueFactory;
 import com.wlu.orm.hbase.util.Utils;
 
 public class DaoImpl<T> implements Dao<T> {
 
-    Log LOG = LogFactory.getLog(DaoImpl.class);
+	Log LOG = LogFactory.getLog(DaoImpl.class);
     Class<T> dataClass;
     private HBaseConnection hbaseConnection;
     // set constant schemas
@@ -235,6 +239,45 @@ public class DaoImpl<T> implements Dao<T> {
         return dm.queryById(id, hbaseConnection);
     }
 
+    @Override
+    public List<T> queryByIndexTable(String key) throws HBaseOrmException {
+        DataMapper<T> dm = dataMapperFactory.createEmpty(dataClass);
+        if (dm == null) {
+        	return null;
+        }
+        
+        String[] rowKey = key.split(IndexTable.KEY_SPLIT);
+        Field field = getField(rowKey[0]);
+        
+   		boolean annotation = field.isAnnotationPresent(DatabaseField.class);
+   		if(!annotation){
+   			throw new HBaseOrmException("Field " + field.getName() + "is not indexed");
+   		}
+        List<String> rowKeyList = dm.queryByIndexTable(field, new StringValue(rowKey[1]), hbaseConnection);
+        List<T> collect = rowKeyList.stream().map(m -> {
+        	try {
+				return queryById(new StringValue(m));
+			} catch (Exception e) {
+				LOG.error("Error trying to query by index table", e);
+				return null;
+			}
+        }).collect(Collectors.toList());
+        return collect;
+    }
+
+	private Field getField(String rowKey) throws HBaseOrmException {
+		Field field = null;
+        try {
+        	field = dataClass.getDeclaredField(rowKey);
+//			field = dataClass.getField(rowKey);
+		} catch (NoSuchFieldException e) {
+			throw new HBaseOrmException(e);
+		} catch (SecurityException e) {
+			throw new HBaseOrmException(e);
+		}
+		return field;
+	}
+    
     @Override
     public List<T> queryWithFilter(String filter, boolean returnWholeObject) {
         // TODO Auto-generated method stub
