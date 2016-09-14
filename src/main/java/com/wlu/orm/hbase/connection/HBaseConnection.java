@@ -110,7 +110,10 @@ public class HBaseConnection implements Closeable{
         Table table =  connection.getTable(TableName.valueOf(tablename));
         Result result = null;
         try {
+        	Instant start = Instant.now();
             result = table.get(get);
+            Instant end = Instant.now();
+            LOG.debug("############  Query  done! | Duration: " + Duration.between(start, end) + " #############");
 
         } finally {
             table.close();
@@ -122,8 +125,10 @@ public class HBaseConnection implements Closeable{
         Table table =  connection.getTable(TableName.valueOf(tablename));
         ResultScanner result = null;
         try {
+        	Instant start = Instant.now();
             result = table.getScanner(scan);
-
+            Instant end = Instant.now();
+            LOG.debug("############  Query Prefix done! | Duration: " + Duration.between(start, end) + " #############");
         } finally {
             table.close();
         }

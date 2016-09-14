@@ -241,6 +241,7 @@ public class DaoImpl<T> implements Dao<T> {
 
     @Override
     public List<T> queryByIndexTable(String key) throws HBaseOrmException {
+    	LOG.info("########### queryByIndexTable");
         DataMapper<T> dm = dataMapperFactory.createEmpty(dataClass);
         if (dm == null) {
         	return null;
@@ -256,6 +257,7 @@ public class DaoImpl<T> implements Dao<T> {
         List<String> rowKeyList = dm.queryByIndexTable(field, new StringValue(rowKey[1]), hbaseConnection);
         List<T> collect = rowKeyList.stream().map(m -> {
         	try {
+        		LOG.debug("Find by key:" + m);
 				return queryById(new StringValue(m));
 			} catch (Exception e) {
 				LOG.error("Error trying to query by index table", e);

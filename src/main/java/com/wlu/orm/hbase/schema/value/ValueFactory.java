@@ -66,7 +66,7 @@ public class ValueFactory {
 			return new Boolean(Bytes.toBoolean(bytes));
 		} else if (clazz.equals(INTEGER)) {
 			return new Integer(Bytes.toInt(bytes));
-		} else if (clazz.equals(LONG)) {
+		} else if (clazz.equals(LONG) && bytes.length > 1) {
 			return new Long(Bytes.toLong(bytes));
 		} else if (clazz.equals(DOUBLE)) {
 			return new Double(Bytes.toDouble(bytes));
@@ -74,15 +74,9 @@ public class ValueFactory {
 			return new Float(Bytes.toFloat(bytes));
 		} else if (clazz.equals(STRING)) {
 			return new String(Bytes.toString(bytes));
-		} else if (clazz.equals(DATE)) {
+		} else if (clazz.equals(DATE) && bytes.length > 1) {
 			//FIXME
-			String s = Arrays.toString(bytes);
-			try {
-				return new SimpleDateFormat("ddMMyyyy").parse(s);
-			} catch (ParseException e) {
-				//skip it
-			}
-			return new Date();
+			return null;
 		} else {
 			return null;
 		}

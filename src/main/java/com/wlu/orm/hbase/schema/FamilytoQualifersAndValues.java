@@ -6,9 +6,7 @@ import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.client.Put;
-import org.apache.hadoop.hbase.util.Bytes;
 
-import com.wlu.orm.hbase.schema.value.StringValue;
 import com.wlu.orm.hbase.schema.value.Value;
 
 /**

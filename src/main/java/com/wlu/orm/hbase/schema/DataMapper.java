@@ -94,7 +94,7 @@ public class DataMapper<T> {
     
     public List<String> queryByIndexTable(Field field, Value id, HBaseConnection connection) throws HBaseOrmException {
         ResultScanner result = null;
-        try {
+        try {//browserName:Safari
         	byte[] prefix = indexTable.generateIndexRowKey(field, id, new StringValue(""));
 			Scan scan = new Scan(prefix);
         	PrefixFilter prefixFilter = new PrefixFilter(prefix);
