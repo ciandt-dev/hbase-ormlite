@@ -5,10 +5,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.client.Put;
 
+import com.wlu.orm.hbase.schema.value.JsonNodeValue;
 import com.wlu.orm.hbase.schema.value.NullValue;
 import com.wlu.orm.hbase.schema.value.StringValue;
 import com.wlu.orm.hbase.schema.value.Value;
@@ -49,8 +51,18 @@ public class IndexTable {
 			//if the field used as 2 table index is null, escape it
 			if(v instanceof NullValue)
 				continue;
-			byte[] indexRowKey = generateIndexRowKey(field, v, rowkey); 
-			addPut(new Put(indexRowKey).addColumn(INDEX_TABLE_FAMILY_QUALIFIER, INDEX_TABLE_FAMILY_QUALIFIER, value));
+			else if(v instanceof JsonNodeValue){
+				((JsonNodeValue)v).getJsonNodeValue().forEach(a -> {
+					String text = a.asText();
+					if(!StringUtils.isBlank(text) && !text.equals("null")){
+						byte[] indexRowKey = generateIndexRowKey(field, new StringValue(a.asText()), rowkey); 
+						addPut(new Put(indexRowKey).addColumn(INDEX_TABLE_FAMILY_QUALIFIER, INDEX_TABLE_FAMILY_QUALIFIER, value));
+					}
+				});
+			} else {
+				byte[] indexRowKey = generateIndexRowKey(field, v, rowkey); 
+				addPut(new Put(indexRowKey).addColumn(INDEX_TABLE_FAMILY_QUALIFIER, INDEX_TABLE_FAMILY_QUALIFIER, value));
+			}
 		}
 	}
 

@@ -1,13 +1,13 @@
 package com.wlu.orm.hbase.schema.value;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.Date;
 
 import org.apache.hadoop.hbase.util.Bytes;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.node.ArrayNode;
 
 //import test.testFields;
 
@@ -20,6 +20,8 @@ public class ValueFactory {
 	static Class<String> STRING = String.class;
 	static Class<Date> DATE = Date.class;
 	static Class<Boolean> BOOLEAN = Boolean.class;
+//	static Class<JsonNode> JSON = JsonNode.class;
+	static Class<ArrayNode> JSON = ArrayNode.class;
 
 	public static <T> Value Create(T instance) {
 
@@ -42,6 +44,8 @@ public class ValueFactory {
 			return new DateValue((Date)instance);
 		} else if (instanceClass.equals(BOOLEAN)) {
 			return new BooleanValue((Boolean)instance);
+		} else if (instanceClass.equals(JSON)) {
+			return new JsonNodeValue((JsonNode)instance);
 		} else {
 			return new StringValue((String) instance.toString());
 		}
@@ -74,6 +78,15 @@ public class ValueFactory {
 			return new Float(Bytes.toFloat(bytes));
 		} else if (clazz.equals(STRING)) {
 			return new String(Bytes.toString(bytes));
+		} else if (clazz.equals(JSON)) {
+			ObjectMapper mapper = new ObjectMapper();
+			JsonNode json = null;
+			try {
+				json = mapper.readTree(Bytes.toString(bytes));
+			} catch (IOException e) {
+				throw new RuntimeException("Error Trying to parse json");
+			}
+			return json;
 		} else if (clazz.equals(DATE) && bytes.length > 1) {
 			//FIXME
 			return null;
@@ -97,6 +110,8 @@ public class ValueFactory {
 			return ((StringValue)value).getStringValue();
 		} else if (clazz.equals(DateValue.class)) {
 			return ((DateValue)value).getDateValue();
+		} else if (clazz.equals(JsonNodeValue.class)) {
+			return ((JsonNodeValue)value).getJsonNodeValue();
 		} else {
 			return null;
 		}
