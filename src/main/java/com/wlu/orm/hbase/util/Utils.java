@@ -4,8 +4,22 @@ package com.wlu.orm.hbase.util;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+
+import org.apache.htrace.fasterxml.jackson.databind.ObjectMapper;
+
+import com.wlu.orm.hbase.annotation.DatabaseField;
 
 public class Utils {
+	
+	private static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+	private static final ObjectMapper MAPPER = new ObjectMapper();
+
 	private static String methodFromField(Field field, String prefix) {
 		return prefix + field.getName().substring(0, 1).toUpperCase()
 				+ field.getName().substring(1);
@@ -68,6 +82,26 @@ public class Utils {
 			throws IllegalArgumentException, IllegalAccessException,
 			InvocationTargetException {
 		Method m = findSetMethod(field);
+		DatabaseField annotation = field.getAnnotation(DatabaseField.class);
+		if(annotation.isSerialized()){
+			if(field.getType().equals(List.class)){
+				try {
+					Class<?> clazz = null;
+					Type genericType = field.getGenericType();
+					if (genericType instanceof ParameterizedType) {
+						ParameterizedType pType = (ParameterizedType)genericType;
+						clazz = Class.forName(pType.getActualTypeArguments()[0].getTypeName());
+					}else
+						clazz = field.getType();
+					
+					value = MAPPER.readValue(value.toString(), MAPPER.getTypeFactory().constructCollectionType(List.class, clazz));
+				} catch (Exception e) {
+					throw new RuntimeException("Error Trying to deserialize field");
+				}
+			} else if(field.getType().equals(Date.class)){
+					value = new Date(Long.parseLong(value.toString()));
+			}
+		}
 		m.invoke(instance, value);
 	}
 

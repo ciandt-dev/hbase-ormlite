@@ -24,4 +24,6 @@ public @interface DatabaseField {
 	boolean id() default false;
 
 	boolean isIndexed() default false;
+	
+	boolean isSerialized() default false;
 }

@@ -5,6 +5,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +20,7 @@ import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.filter.PrefixFilter;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.codehaus.jackson.JsonNode;
 
 import com.wlu.orm.hbase.annotation.DatabaseField;
 import com.wlu.orm.hbase.connection.HBaseConnection;
@@ -122,23 +124,35 @@ public class DataMapper<T> {
         	LOG.info(field.getName());
             if (field.equals(rowkeyField)) {
                 byte[] value = result.getRow();
-                Object fieldinstance = ValueFactory.CreateObject(
+                Object fieldinstance = ValueFactory.createObject(
                         field.getType(), value);
                 Utils.setToField(instance, field, fieldinstance);
                 continue;
             }
+            
             // datatype info
             FieldDataType fdt = fieldDataType.get(field);
             // schema info
             FamilyQualifierSchema fqs = fixedSchema.get(field);
-            if (fdt.isSkip()) {
+
+           DatabaseField df = field.getAnnotation(DatabaseField.class);
+           if (fdt.isSkip()) {
                 continue;
-            } else if (fdt.isPrimitive()) {
+           }else if(df.isSerialized()){
+            	byte[] value = result.getValue(fqs.getFamily(),
+            			fqs.getQualifier());
+            	if(value == null || value.length == 0)
+            		continue;
+            	
+            	Object fieldinstance = ValueFactory.createObject(JsonNode.class,
+            			value);
+            	Utils.setToField(instance, field, fieldinstance);
+            }else if (fdt.isPrimitive()) {
                 byte[] value = result.getValue(fqs.getFamily(),
                         fqs.getQualifier());
                 Class<?> fieldClazz = fdt.dataclass;
                 // convert from byte[] to Object according to field clazz
-                Object fieldinstance = ValueFactory.CreateObject(fieldClazz,
+                Object fieldinstance = ValueFactory.createObject(fieldClazz,
                         value);
                 Utils.setToField(instance, field, fieldinstance);
             } else if (fdt.isList()) {
@@ -195,7 +209,7 @@ public class DataMapper<T> {
                 if(value!= null && value.length > 0){
                 	Class<?> subfieldClazz = subdatatype.dataclass;
                 	// convert from byte[] to Object according to field clazz
-                	Object subfieldinstance = ValueFactory.CreateObject(
+                	Object subfieldinstance = ValueFactory.createObject(
                 			subfieldClazz, value);
                 	Utils.setToField(fieldinstance, subField, subfieldinstance);
                 }
@@ -268,7 +282,7 @@ public class DataMapper<T> {
             // if is rowkey
             if (rowkeyField.equals(field)) {
                 rowkey = ValueFactory
-                        .Create(Utils.getFromField(instance, field));
+                        .create(Utils.getFromField(instance, field));
                 continue;
             }
             FamilyQualifierSchema fq = fixedSchema.get(field);
@@ -278,9 +292,16 @@ public class DataMapper<T> {
                 continue;
             }
 
-            // Primitive, family and qualifier name are both specified
-            if (fq.getQualifier() != null) {
-                Value value = ValueFactory.Create(Utils.getFromField(instance,
+            DatabaseField df = field.getAnnotation(DatabaseField.class);
+            if(df.isSerialized()){
+            	Value value = ValueFactory.createSerializeble(Utils.getFromField(instance,
+                        field));
+                datafieldsToFamilyQualifierValue.get(field).add(
+                        fq.getQualifier(), value);
+            
+             	//Primitive, family and qualifier name are both specified
+            } else if (fq.getQualifier() != null) {
+                Value value = ValueFactory.create(Utils.getFromField(instance,
                         field));
                 datafieldsToFamilyQualifierValue.get(field).add(
                         fq.getQualifier(), value);
@@ -303,7 +324,7 @@ public class DataMapper<T> {
                     }
                     for (String key : list) {
                         String qualifier = key;
-                        Value value = ValueFactory.Create(qualifier);
+                        Value value = ValueFactory.create(qualifier);
 
                         datafieldsToFamilyQualifierValue.get(field).add(
                                 value.toBytes(), value);
@@ -327,7 +348,7 @@ public class DataMapper<T> {
             // if is rowkey
             if (rowkeyField.equals(field)) {
                 try {
-                    rowkey = ValueFactory.Create(Utils.getFromField(instance,
+                    rowkey = ValueFactory.create(Utils.getFromField(instance,
                             field));
                 } catch (IllegalArgumentException e) {
                     e.printStackTrace();
@@ -351,7 +372,7 @@ public class DataMapper<T> {
             // if is rowkey
             if (rowkeyField.equals(field)) {
                 rowkey = ValueFactory
-                        .Create(Utils.getFromField(instance, field));
+                        .create(Utils.getFromField(instance, field));
                 continue;
             }
             FamilyQualifierSchema fq = fixedSchema.get(field);
@@ -363,7 +384,7 @@ public class DataMapper<T> {
 
             // Primitive, family and qualifier name are both specified
             if (fq.getQualifier() != null) {
-                Value value = ValueFactory.Create(Utils.getFromField(instance,
+                Value value = ValueFactory.create(Utils.getFromField(instance,
                         field));
                 datafieldsToFamilyQualifierValue.get(field).add(
                         fq.getQualifier(), value);
@@ -386,7 +407,7 @@ public class DataMapper<T> {
                     }
                     for (String key : list) {
                         String qualifier = key;
-                        Value value = ValueFactory.Create(null);
+                        Value value = ValueFactory.create(null);
 
                         datafieldsToFamilyQualifierValue.get(field).add(
                                 Bytes.toBytes(qualifier), value);
@@ -450,7 +471,7 @@ public class DataMapper<T> {
                     }
                     String qualifier = getDatabaseColumnName(
                             databaseField.qualifierName(), field);
-                    Value value = ValueFactory.Create(Utils.getFromField(
+                    Value value = ValueFactory.create(Utils.getFromField(
                             instance, field));
                     qualifierValues.put(Bytes.toBytes(qualifier), value);
 
@@ -463,7 +484,7 @@ public class DataMapper<T> {
                             .getFromField(instance, field);
                     for (String key : map.keySet()) {
                         String qualifier = key;
-                        Value value = ValueFactory.Create(map.get(key));
+                        Value value = ValueFactory.create(map.get(key));
                         qualifierValues.put(Bytes.toBytes(qualifier), value);
                     }
 
@@ -476,7 +497,7 @@ public class DataMapper<T> {
                             instance, field));
                     for (String key : list) {
                         String qualifier = key;
-                        Value value = ValueFactory.Create(null);
+                        Value value = ValueFactory.create(null);
                         qualifierValues.put(Bytes.toBytes(qualifier), value);
                     }
                 } else {

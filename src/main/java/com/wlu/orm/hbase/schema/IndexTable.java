@@ -55,7 +55,7 @@ public class IndexTable {
 				((JsonNodeValue)v).getJsonNodeValue().forEach(a -> {
 					String text = a.asText();
 					if(!StringUtils.isBlank(text) && !text.equals("null")){
-						byte[] indexRowKey = generateIndexRowKey(field, new StringValue(a.asText()), rowkey); 
+						byte[] indexRowKey = generateIndexRowKey(field, new StringValue(text), rowkey); 
 						addPut(new Put(indexRowKey).addColumn(INDEX_TABLE_FAMILY_QUALIFIER, INDEX_TABLE_FAMILY_QUALIFIER, value));
 					}
 				});

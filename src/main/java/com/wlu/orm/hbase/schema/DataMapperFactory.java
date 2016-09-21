@@ -225,9 +225,17 @@ public class DataMapperFactory<T> {
 		String family;
 		String qualifier;
 		Map<String, byte[]> subFieldToQualifier = null;
-		// TODO
-		// 1. primitive type or string
-		if (field.getType().isPrimitive()
+
+		if(databaseField.isSerialized()){
+			family = getDatabaseColumnName(databaseField.familyName(),
+					field);
+			qualifier = getDatabaseColumnName(
+					databaseField.qualifierName(), field);
+			fieldDataType.put(field, new FieldDataType(
+					FieldDataType.LIST, field.getType()));
+
+		// 1. primitive type or string 
+		} else	if (field.getType().isPrimitive()
 				|| field.getType().equals(String.class)) {
 			if (databaseField.familyName().length() == 0) {
 				throw new HBaseOrmException(

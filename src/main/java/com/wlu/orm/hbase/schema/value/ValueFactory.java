@@ -7,12 +7,10 @@ import java.util.Date;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.node.ArrayNode;
-
-//import test.testFields;
 
 public class ValueFactory {
 
+	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 	static Class<Integer> INTEGER = Integer.class;
 	static Class<Long> LONG = Long.class;
 	static Class<Double> DOUBLE = Double.class;
@@ -20,10 +18,16 @@ public class ValueFactory {
 	static Class<String> STRING = String.class;
 	static Class<Date> DATE = Date.class;
 	static Class<Boolean> BOOLEAN = Boolean.class;
-//	static Class<JsonNode> JSON = JsonNode.class;
-	static Class<ArrayNode> JSON = ArrayNode.class;
+	static Class<JsonNode> JSON_NODE = JsonNode.class;
 
-	public static <T> Value Create(T instance) {
+	public static <T> Value createSerializeble(T instance){
+		if (instance == null || instance.equals("null")) {
+			return new NullValue();
+		}
+		return new JsonNodeValue((JsonNode)OBJECT_MAPPER.valueToTree(instance));
+	}
+	
+	public static <T> Value create(T instance) {
 
 		if (instance == null || instance.equals("null")) {
 			return new NullValue();
@@ -44,12 +48,9 @@ public class ValueFactory {
 			return new DateValue((Date)instance);
 		} else if (instanceClass.equals(BOOLEAN)) {
 			return new BooleanValue((Boolean)instance);
-		} else if (instanceClass.equals(JSON)) {
-			return new JsonNodeValue((JsonNode)instance);
 		} else {
 			return new StringValue((String) instance.toString());
 		}
-		// return null;
 	}
 
 	/**
@@ -59,7 +60,7 @@ public class ValueFactory {
 	 * @param bytes
 	 * @return
 	 */
-	public static Object CreateObject(Class<?> clazz, byte[] bytes) {
+	public static Object createObject(Class<?> clazz, byte[] bytes) {
 		if (clazz.equals(int.class)) {
 			return new Integer(Bytes.toInt(bytes));
 		} else if (clazz.equals(double.class)) {
@@ -78,18 +79,14 @@ public class ValueFactory {
 			return new Float(Bytes.toFloat(bytes));
 		} else if (clazz.equals(STRING)) {
 			return new String(Bytes.toString(bytes));
-		} else if (clazz.equals(JSON)) {
-			ObjectMapper mapper = new ObjectMapper();
-			JsonNode json = null;
+		} else if (clazz.equals(JSON_NODE)) {
+			String result = null;
 			try {
-				json = mapper.readTree(Bytes.toString(bytes));
+				result = OBJECT_MAPPER.writeValueAsString(OBJECT_MAPPER.readTree(Bytes.toString(bytes)));
 			} catch (IOException e) {
 				throw new RuntimeException("Error Trying to parse json");
 			}
-			return json;
-		} else if (clazz.equals(DATE) && bytes.length > 1) {
-			//FIXME
-			return null;
+			return result;
 		} else {
 			return null;
 		}
