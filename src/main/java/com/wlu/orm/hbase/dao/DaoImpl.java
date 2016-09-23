@@ -2,6 +2,7 @@ package com.wlu.orm.hbase.dao;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -75,6 +76,26 @@ public class DaoImpl<T> implements Dao<T> {
         }
     }
 
+    @Override
+    public void insert(Collection<T> data) throws HBaseOrmException {
+    	// need to check the type
+    	if (!data.getClass().equals(dataClass)) {
+    		LOG.error("Class type of data is not the same as that of the Dao, should be "
+    				+ dataClass);
+    		return;
+    	}
+    	data.stream()
+    		.forEach(a -> {
+	    		try {
+	    			DataMapper<T> dataMapper = null;
+	    			dataMapper = dataMapperFactory.create(a);
+	    			dataMapper.insert(hbaseConnection);
+	    		} catch (Exception e) {
+	    			throw new RuntimeException(e);
+	    		}
+    		});
+    }
+    
     @Override
     public void deleteById(Value rowkey) throws HBaseOrmException {
         org.apache.hadoop.hbase.client.Delete delete = new org.apache.hadoop.hbase.client.Delete(
@@ -241,7 +262,7 @@ public class DaoImpl<T> implements Dao<T> {
 
     @Override
     public List<T> queryByIndexTable(String key) throws HBaseOrmException {
-//    	LOG.info("########### queryByIndexTable");
+    	LOG.info("########### queryByIndexTable");
         DataMapper<T> dm = dataMapperFactory.createEmpty(dataClass);
         if (dm == null) {
         	return null;
@@ -257,7 +278,7 @@ public class DaoImpl<T> implements Dao<T> {
         List<String> rowKeyList = dm.queryByIndexTable(field, new StringValue(rowKey[1]), hbaseConnection);
         List<T> collect = rowKeyList.stream().map(m -> {
         	try {
-//        		LOG.debug("Find by key:" + m);
+        		LOG.debug("Find by key:" + m);
 				return queryById(new StringValue(m));
 			} catch (Exception e) {
 				LOG.error("Error trying to query by index table", e);
