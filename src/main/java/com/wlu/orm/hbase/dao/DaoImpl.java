@@ -2,6 +2,8 @@ package com.wlu.orm.hbase.dao;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -9,6 +11,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.hbase.exceptions.HBaseException;
 import org.apache.hadoop.hbase.util.Bytes;
 
 import com.wlu.orm.hbase.annotation.DatabaseField;
@@ -77,12 +80,11 @@ public class DaoImpl<T> implements Dao<T> {
     }
 
     @Override
-    public void insert(Collection<T> data) throws HBaseOrmException {
+    public void insert(List<T> data) throws HBaseOrmException {
     	// need to check the type
-    	if (!data.getClass().equals(dataClass)) {
-    		LOG.error("Class type of data is not the same as that of the Dao, should be "
+    	if (!data.get(0).getClass().equals(dataClass)) {
+    		throw new HBaseOrmException("Class type of data is not the same as that of the Dao, should be "
     				+ dataClass);
-    		return;
     	}
     	data.stream()
     		.forEach(a -> {
@@ -95,6 +97,26 @@ public class DaoImpl<T> implements Dao<T> {
 	    		}
     		});
     }
+
+	private void validateType(List<T> data) throws HBaseOrmException {
+		Type type = data.get(0).getClass();
+    	if (type instanceof ParameterizedType) {
+			ParameterizedType pType = (ParameterizedType)type;
+			Class<?> clazz;
+			try {
+				clazz = Class.forName(pType.getActualTypeArguments()[0].getTypeName());
+				if (!clazz.getClass().equals(dataClass)) {
+					throw new HBaseOrmException("Class type of data is not the same as that of the Dao, should be "
+		    				+ dataClass);
+				}
+			} catch (ClassNotFoundException e) {
+				throw new HBaseOrmException(e);
+			}
+    	}else{
+    		throw new HBaseOrmException("Class type of data is not the same as that of the Dao, should be "
+    				+ dataClass);
+    	}
+	}
     
     @Override
     public void deleteById(Value rowkey) throws HBaseOrmException {

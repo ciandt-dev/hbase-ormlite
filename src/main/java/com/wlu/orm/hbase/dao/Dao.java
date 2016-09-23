@@ -110,5 +110,5 @@ public interface Dao<T> {
 	 * @param data
 	 * @throws HBaseOrmException
 	 */
-	void insert(Collection<T> data) throws HBaseOrmException;
+	void insert(List<T> data) throws HBaseOrmException;
 }
