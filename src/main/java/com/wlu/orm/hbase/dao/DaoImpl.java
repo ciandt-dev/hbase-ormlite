@@ -310,6 +310,15 @@ public class DaoImpl<T> implements Dao<T> {
         return collect;
     }
 
+    @Override
+    public List<T> findAll() throws HBaseOrmException {
+        DataMapper<T> dm = dataMapperFactory.createEmpty(dataClass);
+        if (dm == null) {
+            return null;
+        }
+        return dm.findAll(hbaseConnection);
+    }
+    
 	private Field getField(String rowKey) throws HBaseOrmException {
 		Field field = null;
         try {

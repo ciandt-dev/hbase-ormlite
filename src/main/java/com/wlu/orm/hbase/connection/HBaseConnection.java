@@ -154,6 +154,20 @@ public class HBaseConnection implements Closeable{
         }
     }
 
+    public ResultScanner findAll(byte[] tablename, Scan scan) throws IOException {
+        Table table =  connection.getTable(TableName.valueOf(tablename));
+        ResultScanner result = null;
+        try {
+        	Instant start = Instant.now();
+            result = table.getScanner(scan);
+            Instant end = Instant.now();
+            LOG.debug("############  Query  done! | Duration: " + Duration.between(start, end) + " #############");
+        } finally {
+            table.close();
+        }
+        return result;
+    }
+    
 	@Override
 	public void close() throws IOException {
 		LOG.debug("Closing HBaseConnection Reources");

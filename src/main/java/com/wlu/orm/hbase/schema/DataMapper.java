@@ -5,7 +5,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -80,6 +79,24 @@ public class DataMapper<T> {
     public T queryById(Value id, HBaseConnection connection) throws HBaseOrmException {
         byte[] rowkey = id.toBytes();
         return queryById(rowkey, connection);
+    }
+    
+    public List<T> findAll(HBaseConnection connection) throws HBaseOrmException {
+    	List<T> list = new ArrayList<T>();
+    	ResultScanner result;
+		try {
+			result = connection.findAll(Bytes.toBytes(tablename), new Scan());
+			result.forEach(c -> {
+				try {
+					list.add(createObjectFromResult(c));
+				} catch (Exception e) {
+					throw new RuntimeException(e);
+				}	
+			});
+		} catch (Exception e) {
+			throw new HBaseOrmException(e);
+		}
+        return list;
     }
     
     public T queryById(byte[] rowkey, HBaseConnection connection) throws HBaseOrmException {

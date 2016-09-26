@@ -111,4 +111,10 @@ public interface Dao<T> {
 	 * @throws HBaseOrmException
 	 */
 	void insert(List<T> data) throws HBaseOrmException;
+
+	/**
+	 * @return
+	 * @throws HBaseOrmException
+	 */
+	List<T> findAll() throws HBaseOrmException;
 }
