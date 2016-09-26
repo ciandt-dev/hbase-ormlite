@@ -168,8 +168,8 @@ public class HBaseConnection implements Closeable{
         return result;
     }
 
-    public void truncate(String tableName) throws IOException {
-        admin.truncateTable(TableName.valueOf(tableName), true);
+    public void truncate(TableName tableName) throws IOException {
+        admin.truncateTable(tableName, true);
     }
     
 	@Override

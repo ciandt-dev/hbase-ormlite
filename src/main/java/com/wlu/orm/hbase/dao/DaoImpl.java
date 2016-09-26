@@ -351,7 +351,9 @@ public class DaoImpl<T> implements Dao<T> {
 	@Override
 	public void truncate() throws HBaseOrmException {
 		try {
-			hbaseConnection.truncate(dataMapperFactory.tablename);
+			hbaseConnection.truncate(TableName.valueOf(dataMapperFactory.tablename));
+			if(dataMapperFactory.getIndexTable() != null)
+				hbaseConnection.truncate(dataMapperFactory.getIndexTable());
 		} catch (IOException e) {
 			throw new HBaseOrmException(e);
 		}
