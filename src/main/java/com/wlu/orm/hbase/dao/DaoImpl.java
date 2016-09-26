@@ -11,6 +11,8 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.exceptions.HBaseException;
 import org.apache.hadoop.hbase.util.Bytes;
 
@@ -343,4 +345,12 @@ public class DaoImpl<T> implements Dao<T> {
         return null;
     }
 
+	@Override
+	public void truncate() throws HBaseOrmException {
+		try {
+			hbaseConnection.truncate(dataMapperFactory.tablename);
+		} catch (IOException e) {
+			throw new HBaseOrmException(e);
+		}
+	}
 }

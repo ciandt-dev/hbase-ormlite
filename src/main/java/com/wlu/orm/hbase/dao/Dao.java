@@ -117,4 +117,9 @@ public interface Dao<T> {
 	 * @throws HBaseOrmException
 	 */
 	List<T> findAll() throws HBaseOrmException;
+	
+	/**
+	 * @throws HBaseOrmException
+	 */
+	void truncate() throws HBaseOrmException;
 }
