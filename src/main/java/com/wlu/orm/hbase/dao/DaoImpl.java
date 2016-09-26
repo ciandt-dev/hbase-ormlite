@@ -84,6 +84,9 @@ public class DaoImpl<T> implements Dao<T> {
     @Override
     public void insert(List<T> data) throws HBaseOrmException {
     	// need to check the type
+    	if(data.isEmpty())
+    		throw new HBaseOrmException("Empty list");
+    	
     	if (!data.get(0).getClass().equals(dataClass)) {
     		throw new HBaseOrmException("Class type of data is not the same as that of the Dao, should be "
     				+ dataClass);
