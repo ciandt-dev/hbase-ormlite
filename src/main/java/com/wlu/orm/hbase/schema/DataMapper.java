@@ -150,6 +150,9 @@ public class DataMapper<T> {
             }else if (fdt.isPrimitive()) {
                 byte[] value = result.getValue(fqs.getFamily(),
                         fqs.getQualifier());
+                if(value == null || value.length == 0)
+            		continue;
+                
                 Class<?> fieldClazz = fdt.dataclass;
                 // convert from byte[] to Object according to field clazz
                 Object fieldinstance = ValueFactory.createObject(fieldClazz,
