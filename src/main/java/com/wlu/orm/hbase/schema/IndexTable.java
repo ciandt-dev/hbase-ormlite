@@ -9,6 +9,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.client.Put;
+import org.codehaus.jackson.JsonNode;
 
 import com.wlu.orm.hbase.schema.value.JsonNodeValue;
 import com.wlu.orm.hbase.schema.value.NullValue;

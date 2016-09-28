@@ -8,6 +8,8 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 
+import com.google.gson.Gson;
+
 public class ValueFactory {
 
 	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -24,7 +26,11 @@ public class ValueFactory {
 		if (instance == null || instance.equals("null")) {
 			return new NullValue();
 		}
-		return new JsonNodeValue((JsonNode)OBJECT_MAPPER.valueToTree(instance));
+		if(instance instanceof Date){
+			long time = ((Date)instance).getTime();
+			return new JsonNodeValue(time);
+		}
+		return new JsonNodeValue(instance);
 	}
 	
 	public static <T> Value create(T instance) {

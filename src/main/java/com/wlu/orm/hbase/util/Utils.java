@@ -1,19 +1,21 @@
 package com.wlu.orm.hbase.util;
 
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
 import org.apache.htrace.fasterxml.jackson.databind.ObjectMapper;
 
+import com.google.gson.Gson;
 import com.wlu.orm.hbase.annotation.DatabaseField;
+import com.wlu.orm.hbase.schema.value.JsonNodeValue;
 
 public class Utils {
 	
@@ -94,12 +96,18 @@ public class Utils {
 					}else
 						clazz = field.getType();
 					
-					value = MAPPER.readValue(value.toString(), MAPPER.getTypeFactory().constructCollectionType(List.class, clazz));
+					value = JsonNodeValue.gson.fromJson(value.toString(), genericType);//MAPPER.readValue(value.toString(), MAPPER.getTypeFactory().constructCollectionType(List.class, clazz));
 				} catch (Exception e) {
-					throw new RuntimeException("Error Trying to deserialize field");
+					throw new RuntimeException("Error Trying to deserialize field: " + field.getName());
 				}
 			} else if(field.getType().equals(Date.class)){
 					value = new Date(Long.parseLong(value.toString()));
+			} else {
+				try {
+					value = MAPPER.readValue(value.toString(), field.getType());
+				} catch (IOException e) {
+					throw new RuntimeException("Error Trying to deserialize field: " + field.getName());
+				}
 			}
 		}
 		m.invoke(instance, value);
