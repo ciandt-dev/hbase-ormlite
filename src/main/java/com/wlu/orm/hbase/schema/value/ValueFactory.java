@@ -28,9 +28,9 @@ public class ValueFactory {
 		}
 		if(instance instanceof Date){
 			long time = ((Date)instance).getTime();
-			return new JsonNodeValue(time);
+			return new SerializedValue(time);
 		}
-		return new JsonNodeValue(instance);
+		return new SerializedValue(instance);
 	}
 	
 	public static <T> Value create(T instance) {
@@ -118,8 +118,8 @@ public class ValueFactory {
 			return ((StringValue)value).getStringValue();
 		} else if (clazz.equals(DateValue.class)) {
 			return ((DateValue)value).getDateValue();
-		} else if (clazz.equals(JsonNodeValue.class)) {
-			return ((JsonNodeValue)value).getJsonNodeValue();
+		} else if (clazz.equals(SerializedValue.class)) {
+			return ((SerializedValue)value).getSerializedValue();
 		} else {
 			return null;
 		}

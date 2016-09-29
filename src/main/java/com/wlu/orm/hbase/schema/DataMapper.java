@@ -161,9 +161,10 @@ public class DataMapper<T> {
             	if(value == null || value.length == 0)
             		continue;
             	
-            	Object fieldinstance = ValueFactory.createObject(JsonNode.class,
-            			value);
-            	Utils.setToField(instance, field, fieldinstance);
+//            	Object fieldinstance = ValueFactory.createObject(JsonNode.class,
+//            			value);
+            	
+            	Utils.setToField(instance, field, value);
             }else if (fdt.isPrimitive()) {
                 byte[] value = result.getValue(fqs.getFamily(),
                         fqs.getQualifier());

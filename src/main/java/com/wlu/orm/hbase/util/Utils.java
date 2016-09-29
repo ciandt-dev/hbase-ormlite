@@ -1,21 +1,27 @@
 package com.wlu.orm.hbase.util;
 
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectInputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
+import javax.management.RuntimeErrorException;
+
+import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.htrace.fasterxml.jackson.databind.ObjectMapper;
 
-import com.google.gson.Gson;
 import com.wlu.orm.hbase.annotation.DatabaseField;
-import com.wlu.orm.hbase.schema.value.JsonNodeValue;
 
 public class Utils {
 	
@@ -96,12 +102,17 @@ public class Utils {
 					}else
 						clazz = field.getType();
 					
-					value = JsonNodeValue.gson.fromJson(value.toString(), genericType);//MAPPER.readValue(value.toString(), MAPPER.getTypeFactory().constructCollectionType(List.class, clazz));
+					value = bytesToObject(value, List.class);
+					//JsonNodeValue.gson.fromJson(value.toString(), genericType);//
+//					value = MAPPER.readValue(value.toString(), MAPPER.getTypeFactory().constructCollectionType(List.class, clazz));
 				} catch (Exception e) {
 					throw new RuntimeException("Error Trying to deserialize field: " + field.getName());
 				}
 			} else if(field.getType().equals(Date.class)){
-					value = new Date(Long.parseLong(value.toString()));
+				
+					value = new Date((Long)bytesToObject(value, Long.class));
+//					value = new Date(Bytes.toString((byte[])value));
+//					value = new Date(Long.parseLong(value.toString()));
 			} else {
 				try {
 					value = MAPPER.readValue(value.toString(), field.getType());
@@ -111,6 +122,16 @@ public class Utils {
 			}
 		}
 		m.invoke(instance, value);
+	}
+
+	private static Object bytesToObject(Object value, Class<?> clazz) {
+		ByteArrayInputStream bis = new ByteArrayInputStream((byte[]) value);
+		try(ObjectInput in = new ObjectInputStream(bis);) {
+		  Object o = in.readObject(); 
+		  return clazz.cast(o);
+		} catch (Exception e) {
+			throw new RuntimeException("Error converting bytesToObject", e);
+		}
 	}
 
 	public static void main(String args[]) throws IllegalArgumentException,

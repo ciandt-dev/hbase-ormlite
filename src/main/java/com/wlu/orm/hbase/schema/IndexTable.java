@@ -9,9 +9,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.hbase.client.Put;
-import org.codehaus.jackson.JsonNode;
 
-import com.wlu.orm.hbase.schema.value.JsonNodeValue;
+import com.wlu.orm.hbase.schema.value.SerializedValue;
 import com.wlu.orm.hbase.schema.value.NullValue;
 import com.wlu.orm.hbase.schema.value.StringValue;
 import com.wlu.orm.hbase.schema.value.Value;
@@ -52,14 +51,31 @@ public class IndexTable {
 			//if the field used as 2 table index is null, escape it
 			if(v instanceof NullValue)
 				continue;
-			else if(v instanceof JsonNodeValue){
-				((JsonNodeValue)v).getJsonNodeValue().forEach(a -> {
-					String text = a.asText();
-					if(!StringUtils.isBlank(text) && !text.equals("null")){
-						byte[] indexRowKey = generateIndexRowKey(field, new StringValue(text), rowkey); 
+			else if(v instanceof SerializedValue){
+				Object obj = ((SerializedValue)v).getObjectValue();
+				if(obj instanceof ArrayList<?>){
+					List<?> list = (ArrayList)obj;
+					for (Object object : list) {
+						if(object != null && !"null".equals(object.toString())){
+							byte[] indexRowKey = generateIndexRowKey(field, new StringValue(object.toString()), rowkey); 
+							addPut(new Put(indexRowKey).addColumn(INDEX_TABLE_FAMILY_QUALIFIER, INDEX_TABLE_FAMILY_QUALIFIER, value));
+						}
+					}
+				} else {
+					String jsonNodeValue = ((SerializedValue)v).getSerializedValue();
+					if(!StringUtils.isBlank(jsonNodeValue) && !jsonNodeValue.equals("null")){
+						byte[] indexRowKey = generateIndexRowKey(field, new StringValue(jsonNodeValue), rowkey); 
 						addPut(new Put(indexRowKey).addColumn(INDEX_TABLE_FAMILY_QUALIFIER, INDEX_TABLE_FAMILY_QUALIFIER, value));
 					}
-				});
+				}
+				
+//				((JsonNodeValue)v).getJsonNodeValue().forEach(a -> {
+//					String text = a.asText();
+//					if(!StringUtils.isBlank(text) && !text.equals("null")){
+//						byte[] indexRowKey = generateIndexRowKey(field, new StringValue(text), rowkey); 
+//						addPut(new Put(indexRowKey).addColumn(INDEX_TABLE_FAMILY_QUALIFIER, INDEX_TABLE_FAMILY_QUALIFIER, value));
+//					}
+//				});
 			} else {
 				byte[] indexRowKey = generateIndexRowKey(field, v, rowkey); 
 				addPut(new Put(indexRowKey).addColumn(INDEX_TABLE_FAMILY_QUALIFIER, INDEX_TABLE_FAMILY_QUALIFIER, value));
